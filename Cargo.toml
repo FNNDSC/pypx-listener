@@ -10,9 +10,14 @@ edition = "2021"
 anyhow = "1.0.72"
 clap = { version = "4.3.12", features = ["derive"] }
 dicom = "0.5.4"
+regex = "1.9.1"
 
 # https://github.com/johnthagen/min-sized-rust
 [profile.release]
 strip = "symbols"
 lto = "fat"
 codegen-units = 1
+
+[dev-dependencies]
+fs-err = "2.9.0"
+tempdir = "0.3.7"
