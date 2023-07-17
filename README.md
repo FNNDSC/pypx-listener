@@ -3,10 +3,23 @@
 An instance handler for `storescp` which reorganizes incoming DICOM files.
 Rust re-write of `px-repack` from [pypx](https://github.com/FNNDSC/pypx).
 
+## Notes: Performance
+
+`rx-repack` runs faster than the rate at which `storescp` receives DICOM instances,
+so it is unlikely to have a resource deficit.
+
 ## Testing
+
+Get data:
 
 ```shell
 ./get_test_data.sh examples
+```
+
+Run tests:
+
+```shell
+cargo test
 ```
 
 ## Benchmarking: v.s. Python
