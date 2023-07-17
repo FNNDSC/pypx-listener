@@ -10,7 +10,6 @@ set -ex
 mkdir -vp "$1"
 cd "$1"
 curl -fL https://github.com/FNNDSC/SAG-anon/tarball/master | tar -xz
-chmod -Rv -w ./FNNDSC-SAG-anon-*
 
 python -m venv pypx
 source pypx/bin/activate
