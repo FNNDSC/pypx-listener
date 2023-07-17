@@ -1,0 +1,17 @@
+/target
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.coverage
+.cache
+nosetests.xml
+coverage.xml
+
+.DS_Store
+
+# PyCharm
+.idea/
+
+# VSCode
+.vscode/
