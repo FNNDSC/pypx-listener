@@ -1,22 +1,32 @@
 //! DICOM tag extraction.
+use dicom::dictionary_std::tags;
+use regex::Regex;
 use std::borrow::Cow;
 use std::path::PathBuf;
 use std::sync::OnceLock;
-use dicom::dictionary_std::tags;
-use regex::Regex;
 
 #[allow(non_snake_case)]
 pub(crate) struct DicomInfo {
-    PatientID: String,
-    PatientName: String,
-    PatientBirthDate: String,
-    StudyDescription: String,
-    AccessionNumber: String,
-    StudyDate: String,
-    SeriesNumber: u32,
-    SeriesDescription: String,
-    InstanceNumber: u32,
-    SOPInstanceUID: String,
+    pub PatientID: String,
+    pub PatientName: String,
+    pub PatientAge: String,
+    pub PatientSex: char,
+    pub PatientBirthDate: String,
+    pub AccessionNumber: String,
+    pub StudyInstanceUID: String,
+    pub StudyDescription: String,
+    pub StudyDate: String,
+    pub SeriesNumber: u32,
+    pub SeriesDescription: String,
+    pub InstanceNumber: u32,
+    pub SOPInstanceUID: String,
+}
+
+fn es(
+    dcm: &dicom::object::DefaultDicomObject,
+    tag: dicom::core::Tag,
+) -> Result<Cow<str>, dicom::object::Error> {
+    dcm.element(tag).map(|data| data.to_str().unwrap())
 }
 
 impl TryFrom<dicom::object::DefaultDicomObject> for DicomInfo {
@@ -24,50 +34,19 @@ impl TryFrom<dicom::object::DefaultDicomObject> for DicomInfo {
 
     fn try_from(dcm: dicom::object::DefaultDicomObject) -> Result<Self, Self::Error> {
         let info = Self {
-            PatientID: dcm.element(tags::PATIENT_ID)?.to_str().unwrap().to_string(),
-            PatientName: dcm
-                .element(tags::PATIENT_NAME)?
-                .to_str()
-                .unwrap()
-                .to_string(),
-            PatientBirthDate: dcm
-                .element(tags::PATIENT_BIRTH_DATE)?
-                .to_str()
-                .unwrap()
-                .to_string(),
-            StudyDescription: dcm
-                .element(tags::STUDY_DESCRIPTION)?
-                .to_str()
-                .unwrap()
-                .to_string(),
-            AccessionNumber: dcm
-                .element(tags::ACCESSION_NUMBER)?
-                .to_str()
-                .unwrap()
-                .to_string(),
-            StudyDate: dcm.element(tags::STUDY_DATE)?.to_str().unwrap().to_string(),
-            SeriesNumber: dcm
-                .element(tags::SERIES_NUMBER)?
-                .to_str()
-                .unwrap()
-                .parse()
-                .unwrap(),
-            SeriesDescription: dcm
-                .element(tags::SERIES_DESCRIPTION)?
-                .to_str()
-                .unwrap()
-                .to_string(),
-            InstanceNumber: dcm
-                .element(tags::INSTANCE_NUMBER)?
-                .to_str()
-                .unwrap()
-                .parse()
-                .unwrap(),
-            SOPInstanceUID: dcm
-                .element(tags::SOP_INSTANCE_UID)?
-                .to_str()
-                .unwrap()
-                .to_string(),
+            PatientID: es(&dcm, tags::PATIENT_ID)?.to_string(),
+            PatientName: es(&dcm, tags::PATIENT_NAME)?.to_string(),
+            PatientAge: es(&dcm, tags::PATIENT_AGE)?.to_string(),
+            PatientSex: es(&dcm, tags::PATIENT_SEX)?.parse().unwrap(),
+            PatientBirthDate: es(&dcm, tags::PATIENT_BIRTH_DATE)?.to_string(),
+            StudyDescription: es(&dcm, tags::STUDY_DESCRIPTION)?.to_string(),
+            AccessionNumber: es(&dcm, tags::ACCESSION_NUMBER)?.to_string(),
+            StudyInstanceUID: es(&dcm, tags::STUDY_INSTANCE_UID)?.to_string(),
+            StudyDate: es(&dcm, tags::STUDY_DATE)?.to_string(),
+            SeriesNumber: es(&dcm, tags::SERIES_NUMBER)?.parse().unwrap(),
+            SeriesDescription: es(&dcm, tags::SERIES_DESCRIPTION)?.to_string(),
+            InstanceNumber: es(&dcm, tags::INSTANCE_NUMBER)?.parse().unwrap(),
+            SOPInstanceUID: es(&dcm, tags::SOP_INSTANCE_UID)?.to_string(),
         };
         Ok(info)
     }

@@ -1,6 +1,9 @@
 extern crate tempdir;
+
 use anyhow::{bail, Context};
 use rx_repack::repack;
+use std::collections::HashMap;
+use std::io::BufReader;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use tempdir::TempDir;
@@ -20,6 +23,14 @@ fn test_parity_with_px_repack() -> anyhow::Result<()> {
 
     process_all(&od_dir, &actual_data_dir, &actual_log_dir)?;
     assert!(dirs_are_equal(&expected_data_dir, &actual_data_dir));
+
+    let expected_patient_data_dir = expected_log_dir.join("patientData");
+    let actual_patient_data_dir = actual_log_dir.join("patientData");
+    let patient_data_pairs = file_by_file(&expected_patient_data_dir, &actual_patient_data_dir);
+    for (expected_file, actual_file) in patient_data_pairs {
+        assert!(actual_file.is_file());
+        assert_json_equal(&expected_file, &actual_file);
+    }
 
     anyhow::Ok(())
 }
@@ -46,6 +57,38 @@ fn dirs_are_equal(expected: &Path, actual: &Path) -> bool {
         .wait()
         .unwrap()
         .success()
+}
+
+fn assert_json_equal(expected: &Path, actual: &Path) {
+    assert_eq!(
+        load_json(expected),
+        load_json(actual),
+        "JSON file {:?} not the same as {:?}",
+        expected,
+        actual
+    )
+}
+
+fn load_json<P: AsRef<Path>>(p: P) -> HashMap<String, String> {
+    let file = fs_err::File::open(p.as_ref()).unwrap();
+    let reader = BufReader::new(file);
+    serde_json::from_reader(reader).unwrap()
+}
+
+fn file_by_file<'a>(
+    expected: &'a Path,
+    actual: &'a Path,
+) -> impl Iterator<Item = (PathBuf, PathBuf)> + 'a {
+    let s = expected.join("**").into_os_string();
+    let p = s.to_str().unwrap();
+    glob::glob(p)
+        .unwrap()
+        .map(|r| r.unwrap())
+        .map(move |expected_path| {
+            let rel = pathdiff::diff_paths(&expected_path, expected).unwrap();
+            let actual_path = actual.join(rel);
+            (expected_path, actual_path)
+        })
 }
 
 fn examples_instructions() -> String {
