@@ -1,0 +1,148 @@
+# On push: build latest images and run examples
+
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+    tags:
+      - "v?[0-9]+.[0-9]+.[0-9]+*"
+  pull_request:
+
+jobs:
+  test:
+    name: test
+    runs-on: ubuntu-22.04
+    steps:
+    - name: Git checkout
+      uses: actions/checkout@v3
+    - name: Get examples
+      run: ./get_examples.sh examples
+    - name: Setup rust toolchain
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+    - name: Setup rust cache
+      uses: Swatinem/rust-cache@v2
+    - name: Install cargo-llvm-cov
+      uses: taiki-e/install-action@cargo-llvm-cov
+    - name: Run tests
+      id: test
+      run: cargo llvm-cov --lcov --output-path lcov.info
+      continue-on-error: true
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        files: ./lcov.info
+        fail_ci_if_error: true
+    - name: End test
+      run: '[ "${{ steps.test.outcome }}" = "success" ]'
+
+  build:
+    name: Build
+    needs: [ test ]
+    runs-on: ubuntu-22.04
+
+    # A local registry helps us reuse the built image between steps
+    services:
+      registry:
+        image: registry:2
+        ports:
+          - 5000:5000
+
+    steps:
+    - name: Get git tag
+      id: git_info
+      if: startsWith(github.ref, 'refs/tags/')
+      run: echo "tag=${GITHUB_REF##*/}" >> $GITHUB_OUTPUT
+    - name: Get project info
+      id: determine
+      env:
+        git_tag: ${{ steps.git_info.outputs.tag }}
+      run: |
+        repo="${GITHUB_REPOSITORY,,}"  # to lower case
+        # if build triggered by tag, use tag name
+        tag="${git_tag:-latest}"
+        # if tag is a version number prefixed by 'v', remove the 'v'
+        if [[ "$tag" =~ ^v[0-9].* ]]; then
+          tag="${tag:1}"
+        fi
+        dock_image=$repo:$tag
+        echo $dock_image
+        echo "dock_image=$dock_image" >> $GITHUB_OUTPUT
+        echo "repo=$repo" >> $GITHUB_OUTPUT
+    - uses: actions/checkout@v3
+      # QEMU is used for non-x86_64 builds
+    - uses: docker/setup-qemu-action@v2
+      # buildx adds additional features to docker build
+    - uses: docker/setup-buildx-action@v2
+      with:
+        driver-opts: network=host
+      # improve rebuild speeds
+    - name: Cache Docker layers
+      uses: actions/cache@v3
+      with:
+        path: /tmp/.buildx-cache
+        key: ${{ runner.os }}-buildx-${{ hashFiles('Cargo.toml', 'Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-buildx-
+
+    - name: Build image
+      uses: docker/build-push-action@v3
+      id: docker_build
+      with:
+        context: .
+        file: ./Dockerfile
+        tags: localhost:5000/${{ steps.determine.outputs.dock_image }}
+        platforms: linux/amd64,linux/arm64/v8,linux/arm/v7
+        push: true
+        cache-from: type=local,src=/tmp/.buildx-cache
+        cache-to: type=local,dest=/tmp/.buildx-cache
+        build-args: |
+          CARGO_TERM_COLOR=always
+
+    - name: Integration tests
+      run: echo "no tests"
+
+    - name: Login to DockerHub
+      if: github.event_name == 'push' || github.event_name == 'release'
+      id: dockerhub_login
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+    - name: Login to GitHub Container Registry
+      if: github.event_name == 'push' || github.event_name == 'release'
+      uses: docker/login-action@v2
+      with:
+        registry: ghcr.io
+        username: ${{ github.repository_owner }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Push images
+      if: github.event_name == 'push' || github.event_name == 'release'
+      uses: docker/build-push-action@v3
+      id: docker_push
+      with:
+        context: .
+        file: ./Dockerfile
+        tags: |
+          localhost:5000/${{ steps.determine.outputs.dock_image }}
+          docker.io/${{ steps.determine.outputs.dock_image }}
+          ghcr.io/${{ steps.determine.outputs.dock_image }}
+        platforms: linux/amd64,linux/arm64/v8
+        push: true
+        cache-from: type=local,src=/tmp/.buildx-cache
+        cache-to: type=local,dest=/tmp/.buildx-cache
+        build-args: |
+          CARGO_TERM_COLOR=always
+    - name: Update DockerHub description
+      if: steps.docker_push.outcome == 'success'
+      uses: peter-evans/dockerhub-description@v3
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_PASSWORD }}
+        short-description: A DICOM instance handler for storescp which reorganizes incoming DICOM files for the pypx+pfdcm+ChRIS ecosystem.
