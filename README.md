@@ -13,7 +13,7 @@ so it is unlikely to have a resource deficit.
 Get data:
 
 ```shell
-./get_test_data.sh examples
+./get_examples.sh examples
 ```
 
 Run tests:
@@ -30,7 +30,7 @@ Setup benchmarks:
 cargo build --release
 ```
 
-`rx-repack` runs ~12x faster than it takes Python 3.11.3 to do _literally nothing._
+`rx-repack` runs ~12x faster than it takes Python 3.11.3 to do _literally nothing_.
 
 ```shell
 hyperfine -N "python -c ''" "target/release/rx-repack --xcrdir $PWD/examples/FNNDSC-SAG-anon-3d6e850 --xcrfile 0002-1.3.12.2.1107.5.2.19.45152.2013030808110261698786039.dcm  --datadir /tmp/dicom"

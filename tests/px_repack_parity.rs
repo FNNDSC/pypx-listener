@@ -50,7 +50,7 @@ fn dirs_are_equal(expected: &Path, actual: &Path) -> bool {
 
 fn examples_instructions() -> String {
     format!(
-        "Please run:\n\n\trm -rf {}\n\t./get_test_data.sh {}",
+        "Please run:\n\n\trm -rf {}\n\t./get_examples.sh {}",
         &EXAMPLES_DIR, &EXAMPLES_DIR
     )
 }
