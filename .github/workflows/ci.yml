@@ -18,13 +18,13 @@ jobs:
       uses: actions/checkout@v3
     - name: Get examples
       run: ./get_examples.sh examples
-    - name: Setup rust toolchain
-      uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
-        profile: minimal
+    - name: Setup Rust
+      uses: dtolnay/rust-toolchain@stable
+      id: rust-toolchain
     - name: Setup rust cache
       uses: Swatinem/rust-cache@v2
+      with:
+        shared-key: ${{ steps.rust-toolchain.outputs.cachekey }}
     - name: Install cargo-llvm-cov
       uses: taiki-e/install-action@cargo-llvm-cov
     - name: Run tests
