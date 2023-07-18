@@ -1,8 +1,8 @@
 //! DICOM tag extraction.
+use camino::Utf8PathBuf;
 use dicom::dictionary_std::tags;
 use regex::Regex;
 use std::borrow::Cow;
-use std::path::PathBuf;
 use std::sync::OnceLock;
 
 #[allow(non_snake_case)]
@@ -56,7 +56,7 @@ impl DicomInfo {
     /// Produce the destination directory and file name for the DICOM file.
     /// Equivalent Python implementation is `pypx.repack.Process.packPath_resolve`
     /// https://github.com/FNNDSC/pypx/blob/d4791598f65b257cbf6b17d6b5b05db777844db4/pypx/repack.py#L412-L459
-    pub(crate) fn to_path_parts(&self) -> (PathBuf, String) {
+    pub(crate) fn to_path_parts(&self) -> (Utf8PathBuf, String) {
         let root_string = format!(
             "{}-{}-{}",
             &self.PatientID, &self.PatientName, &self.PatientBirthDate
@@ -74,9 +74,9 @@ impl DicomInfo {
         let image_file = sanitize(&image_string);
 
         (
-            PathBuf::from(root_dir.as_ref())
-                .join(&study_dir.as_ref())
-                .join(&series_dir.as_ref()),
+            Utf8PathBuf::from(root_dir.as_ref())
+                .join(study_dir.as_ref())
+                .join(series_dir.as_ref()),
             image_file.to_string(),
         )
     }

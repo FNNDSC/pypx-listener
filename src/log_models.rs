@@ -5,7 +5,6 @@ use crate::dicom_info::DicomInfo;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
-use std::path::PathBuf;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub(crate) struct PatientData<'a> {

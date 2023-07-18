@@ -1,6 +1,6 @@
+use camino::Utf8PathBuf;
 use clap::Parser;
 use rx_repack::repack;
-use std::path::PathBuf;
 
 #[derive(clap::Parser)]
 #[clap(
@@ -21,14 +21,14 @@ The path template is:
 struct Cli {
     /// Parent directory of DICOM instance
     #[clap(long)]
-    xcrdir: PathBuf,
+    xcrdir: Utf8PathBuf,
     /// File name of DICOM instance
     #[clap(long)]
-    xcrfile: PathBuf,
+    xcrfile: Utf8PathBuf,
 
     /// output directory
     #[clap(long)]
-    datadir: PathBuf,
+    datadir: Utf8PathBuf,
 
     /// Remove DICOM file from source location
     #[clap(long, default_value_t = false)]
@@ -36,7 +36,7 @@ struct Cli {
 
     /// NOT IMPLEMENTED
     #[clap(long)]
-    logdir: Option<PathBuf>,
+    logdir: Option<Utf8PathBuf>,
 
     /// Deprecated option
     #[clap(long)]
@@ -49,7 +49,7 @@ fn main() -> anyhow::Result<()> {
     repack(
         &dicom_file,
         &args.datadir,
-        args.logdir.as_ref(),
+        args.logdir.as_ref().map(|p| p.as_path()),
         args.cleanup,
     )
 }

@@ -1,10 +1,11 @@
 extern crate tempdir;
 
 use anyhow::{bail, Context};
+use camino::{Utf8Path, Utf8PathBuf};
 use rx_repack::repack;
 use std::collections::HashMap;
 use std::io::BufReader;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::process::Command;
 use tempdir::TempDir;
 
@@ -16,7 +17,7 @@ fn test_parity_with_px_repack() -> anyhow::Result<()> {
         find_examples().with_context(examples_instructions)?;
 
     let tmp_dir = TempDir::new("example")?;
-    let tmp_path = tmp_dir.path();
+    let tmp_path = Utf8Path::from_path(tmp_dir.path()).unwrap();
     // let tmp_path = Path::new("./test_output");
     let actual_data_dir = tmp_path.join("data");
     let actual_log_dir = tmp_path.join("log");
@@ -36,18 +37,20 @@ fn test_parity_with_px_repack() -> anyhow::Result<()> {
 }
 
 /// Run rx-repack on all files in a directory.
-fn process_all(od_dir: &Path, data_dir: &Path, log_dir: &Path) -> anyhow::Result<()> {
+fn process_all(od_dir: &Utf8Path, data_dir: &Utf8Path, log_dir: &Utf8Path) -> anyhow::Result<()> {
     fs_err::read_dir(od_dir)
         .unwrap()
         .map(|r| r.unwrap())
         .filter(|e| e.metadata().unwrap().is_file())
         .filter(|e| e.file_name().to_str().unwrap_or("").ends_with(".dcm"))
         .map(|e| e.path())
-        .map(|dicom_file| (repack(dicom_file, data_dir, Some(log_dir), false)))
+        .map(Utf8PathBuf::from_path_buf)
+        .map(Result::unwrap)
+        .map(|dicom_file| (repack(&dicom_file, data_dir, Some(log_dir), false)))
         .collect()
 }
 
-fn dirs_are_equal(expected: &Path, actual: &Path) -> bool {
+fn dirs_are_equal(expected: &Utf8Path, actual: &Utf8Path) -> bool {
     Command::new("diff")
         .arg("-r")
         .arg(expected)
@@ -59,7 +62,7 @@ fn dirs_are_equal(expected: &Path, actual: &Path) -> bool {
         .success()
 }
 
-fn assert_json_equal(expected: &Path, actual: &Path) {
+fn assert_json_equal(expected: &Utf8Path, actual: &Utf8Path) {
     assert_eq!(
         load_json(expected),
         load_json(actual),
@@ -76,16 +79,18 @@ fn load_json<P: AsRef<Path>>(p: P) -> HashMap<String, String> {
 }
 
 fn file_by_file<'a>(
-    expected: &'a Path,
-    actual: &'a Path,
-) -> impl Iterator<Item = (PathBuf, PathBuf)> + 'a {
+    expected: &'a Utf8Path,
+    actual: &'a Utf8Path,
+) -> impl Iterator<Item = (Utf8PathBuf, Utf8PathBuf)> + 'a {
     let s = expected.join("**").into_os_string();
     let p = s.to_str().unwrap();
     glob::glob(p)
         .unwrap()
         .map(|r| r.unwrap())
+        .map(Utf8PathBuf::from_path_buf)
+        .map(Result::unwrap)
         .map(move |expected_path| {
-            let rel = pathdiff::diff_paths(&expected_path, expected).unwrap();
+            let rel = pathdiff::diff_utf8_paths(&expected_path, expected).unwrap();
             let actual_path = actual.join(rel);
             (expected_path, actual_path)
         })
@@ -98,13 +103,15 @@ fn examples_instructions() -> String {
     )
 }
 
-fn find_examples() -> anyhow::Result<(PathBuf, PathBuf, PathBuf)> {
-    let mut input_dir: Option<PathBuf> = None;
-    let mut log_dir: Option<PathBuf> = None;
-    let mut data_dir: Option<PathBuf> = None;
+fn find_examples() -> anyhow::Result<(Utf8PathBuf, Utf8PathBuf, Utf8PathBuf)> {
+    let mut input_dir: Option<Utf8PathBuf> = None;
+    let mut log_dir: Option<Utf8PathBuf> = None;
+    let mut data_dir: Option<Utf8PathBuf> = None;
     let read_dir = fs_err::read_dir(EXAMPLES_DIR)?
         .filter_map(|r| r.ok())
-        .map(|e| e.path());
+        .map(|e| e.path())
+        .map(Utf8PathBuf::from_path_buf)
+        .map(Result::unwrap);
     for p in read_dir {
         if file_name_starts_with(&p, "FNNDSC-SAG-anon-") {
             input_dir = Some(p.clone());
@@ -125,9 +132,8 @@ fn find_examples() -> anyhow::Result<(PathBuf, PathBuf, PathBuf)> {
         .ok_or_else(|| anyhow::Error::msg("Examples not found"))
 }
 
-fn file_name_starts_with(p: &Path, prefix: &str) -> bool {
+fn file_name_starts_with(p: &Utf8Path, prefix: &str) -> bool {
     p.file_name()
-        .and_then(|s| s.to_str())
         .map(|s| s.starts_with(prefix))
         .unwrap_or(false)
 }
