@@ -1,3 +1,12 @@
+/.git
+/.github
+/LICENSE
+/README.md
+/Dockerfile
+/.dockerignore
+/get_examples.sh
+/tests
+
 /examples
 /target
 
