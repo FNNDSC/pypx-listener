@@ -96,7 +96,7 @@ jobs:
         context: .
         file: ./Dockerfile
         tags: localhost:5000/${{ steps.determine.outputs.dock_image }}
-        platforms: linux/amd64,linux/arm64/v8,linux/arm/v7
+#        platforms: linux/amd64,linux/arm64/v8,linux/arm/v7
         push: true
         cache-from: type=local,src=/tmp/.buildx-cache
         cache-to: type=local,dest=/tmp/.buildx-cache
