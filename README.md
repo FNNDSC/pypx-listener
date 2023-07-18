@@ -1,5 +1,10 @@
 # pypx-listener
 
+[![MIT License](https://img.shields.io/github/license/fnndsc/pypx-listener)](https://github.com/FNNDSC/pypx-listener/blob/main/LICENSE)
+[![Version](https://img.shields.io/docker/v/fnndsc/pypx-listener?sort=semver)](https://hub.docker.com/r/fnndsc/pypx-listener)
+[![CI](https://github.com/FNNDSC/pypx-listener/actions/workflows/ci.yml/badge.svg)](https://github.com/FNNDSC/pypx-listener/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/FNNDSC/pypx-listener/branch/master/graph/badge.svg?token=1YQRZWW95S)](https://codecov.io/gh/FNNDSC/pypx-listener)
+
 An instance handler for `storescp` which reorganizes incoming DICOM files.
 Rust re-write of `px-repack` from [pypx](https://github.com/FNNDSC/pypx).
 
