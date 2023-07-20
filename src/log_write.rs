@@ -7,16 +7,18 @@ use std::io;
 use std::io::{BufReader, BufWriter};
 use std::path::PathBuf;
 
-/// Write stuff to `/home/dicom/log/{patientData,seriesData,studyData}`
+/// Write *pypx* stuff to `/home/dicom/log/{patientData,seriesData,studyData}`.
+/// The stuff is read by downstream _pypx_ programs such as `px-register`, `px-status`.
 pub(crate) fn write_logs(
     info: &DicomInfo,
     log_dir: &Utf8Path,
     pack_dir: &Utf8Path,
 ) -> io::Result<()> {
-    let patient_data_dir = log_dir.join("patientDatta");
+    let patient_data_dir = log_dir.join("patientData");
     let series_data_dir = log_dir.join("seriesData");
     let study_data_dir = log_dir.join("studyData");
 
+    // write stuff to patientData/MRN.json
     let patient_data_fname = patient_data_dir
         .join(&info.PatientID)
         .with_extension("json");
@@ -27,6 +29,13 @@ pub(crate) fn write_logs(
         .insert(info.StudyInstanceUID.to_string());
     write_json(patient_data, patient_data_fname)?;
 
+    // write stuff to studyData/X.X.X.XXXXX-meta.json
+    // write stuff to studyData/X.X.X.XXXXX-series/Y.Y.Y.YYYYY-meta.json
+
+    // write stuff to seriesData/Y.Y.Y.YYYYY-meta.json
+    // write stuff to seriesData/Y.Y.Y.YYYYY-pack.json
+
+    // write stuff to seriesData/Y.Y.Y.YYYYY-img/Z.Z.Z.ZZZZZ.dcm.json
     let img_data_dir = series_data_dir.join(format!("{}-img", info.SeriesInstanceUID));
     fs_err::create_dir_all(&img_data_dir)?;
     let img_data_fname = img_data_dir.join(format!("{}.json", info.pypx_fname));
