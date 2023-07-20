@@ -108,3 +108,4 @@ fn write_json<S: Serialize, P: AsRef<Utf8Path>>(data: S, p: P) -> io::Result<()>
     serde_json::to_writer_pretty(writer, &data).unwrap();
     Ok(())
 }
+

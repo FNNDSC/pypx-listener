@@ -133,13 +133,6 @@ fn name_of(tag: Tag) -> Option<&'static str> {
     StandardDataDictionary.by_tag(tag).map(|e| e.alias)
 }
 
-impl TryFrom<&DefaultDicomObject> for StudyDataSeriesMeta {
-    type Error = DicomTagReadError;
-    fn try_from(dcm: &DefaultDicomObject) -> Result<Self, Self::Error> {
-        todo!()
-    }
-}
-
 #[derive(Debug, Serialize)]
 struct ValueAndLabel {
     value: String,
