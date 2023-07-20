@@ -184,11 +184,12 @@ pub(crate) struct InstanceData<'a> {
     outputFile: &'a str,
     // TODO we don't include imageObj because I don't think it's used anywhwere.
     // Trying to get this information is annoying.
-    // imageObj: HashMap<String, FileStat>,
+    imageObj: HashMap<String, FileStat>,
 }
 
 impl<'a> InstanceData<'a> {
-    pub fn new(d: &'a DefaultDicomObject, e: &'a PypxPathElements, outputFile: &'a str) -> Result<Self, DicomTagReadError> {
+    pub fn new(d: &'a DefaultDicomObject, e: &'a PypxPathElements, outputFile: &'a str, FSlocation: String) -> Result<Self, DicomTagReadError> {
+        let imageObj = [(outputFile.to_string(), FileStat { FSlocation })].into_iter().collect();
         let data = Self {
             PatientID: e.PatientID,
             StudyInstanceUID: tt(d, tags::STUDY_INSTANCE_UID)?,
@@ -198,21 +199,23 @@ impl<'a> InstanceData<'a> {
             SeriesDate: tt(d, tags::SERIES_DATE)?,
             Modality: tt(d, tags::MODALITY)?,
             outputFile,
+            imageObj
         };
         Ok(data)
     }
 }
 
 
-//
-// // /// Unimportant information about a file's stat metadata.
-// // /// Not complete.
-// // /// https://github.com/FNNDSC/pypx/blob/7619c15f4d2303d6d5ca7c255d81d06c7ab8682b/pypx/smdb.py#L1306-L1317
-// // #[derive(Debug, Serialize)]
-// // struct FileStat {
-// //     FSlocation: String,
-// // }
-//
+
+/// File's stat metadata.
+/// Not complete.
+/// https://github.com/FNNDSC/pypx/blob/7619c15f4d2303d6d5ca7c255d81d06c7ab8682b/pypx/smdb.py#L1306-L1317
+#[derive(Debug, Serialize)]
+struct FileStat {
+    /// Important! Checked by smdb.py to count how many files are packed so far.
+    FSlocation: String,
+}
+
 
 #[derive(Debug, Serialize)]
 pub(crate) struct SeriesPack {
