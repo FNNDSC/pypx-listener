@@ -60,7 +60,7 @@ pub(crate) struct PypxPathElements<'a> {
     pub StudyDescription: &'a str,
     pub AccessionNumnber: &'a str,
     pub StudyDate: &'a str,
-    pub SeriesNumber: &'a str,
+    pub SeriesNumber: u32,
     pub SeriesDescription: &'a str,
 }
 
@@ -79,7 +79,7 @@ impl<'a> TryFrom<&'a DefaultDicomObject> for PypxPathElements<'a> {
             StudyDescription: tt(&dcm, tags::STUDY_DESCRIPTION)?,
             AccessionNumnber: tt(&dcm, tags::ACCESSION_NUMBER)?,
             StudyDate: tt(&dcm, tags::STUDY_DATE)?,
-            SeriesNumber: tt(&dcm, tags::SERIES_NUMBER)?,
+            SeriesNumber: tt(&dcm, tags::SERIES_NUMBER)?.parse()?,
             SeriesDescription: tt(&dcm, tags::SERIES_DESCRIPTION)?,
         };
         Ok(data)

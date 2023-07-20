@@ -45,16 +45,32 @@ impl<'a> PatientData<'a> {
         }
     }
 }
-//
-// #[derive(Debug, Serialize)]
-// struct StudyDataMeta<'a> {
-//     PatientID: &'a str,
-//     StudyDescription: &'a str,
-//     StudyDate: &'a str,
-//     StudyInstanceUID: &'a str,
-//     PerformedStationAETitle: &'a str,
-// }
-//
+
+#[derive(Debug, Serialize)]
+pub(crate) struct StudyDataMeta<'a> {
+    PatientID: &'a str,
+    StudyDescription: &'a str,
+    StudyDate: &'a str,
+    StudyInstanceUID: &'a str,
+    PerformedStationAETitle: &'a str,
+}
+
+impl<'a> StudyDataMeta<'a> {
+    pub fn new(d: &'a DefaultDicomObject, e: &'a PypxPathElements, StudyInstanceUID: &'a str) -> Result<Self, DicomTagReadError> {
+        let data = Self {
+            PatientID: e.PatientID,
+            StudyDescription: e.StudyDescription,
+            StudyDate: e.StudyDate,
+            StudyInstanceUID,
+            PerformedStationAETitle: tt(&d, tags::PERFORMED_STATION_AE_TITLE).unwrap_or(""),
+        };
+        Ok(data)
+    }
+}
+
+
+
+
 #[derive(Debug, Serialize)]
 pub(crate) struct StudyDataSeriesMeta {
     SeriesInstanceUID: String,
@@ -130,17 +146,31 @@ struct ValueAndLabel {
     label: String,
 }
 
-// #[derive(Debug, Serialize)]
-// struct SeriesDataMeta<'a> {
-//     PatientID: &'a str,
-//     StudyInstanceUID: &'a str,
-//     SeriesInstanceUID: &'a str,
-//     SeriesDescription: &'a str,
-//     SeriesNumber: u32,
-//     SeriesDate: &'a str,
-//     Modality: &'a str,
-// }
-//
+#[derive(Debug, Serialize)]
+pub(crate) struct SeriesDataMeta<'a> {
+    PatientID: &'a str,
+    StudyInstanceUID: &'a str,
+    SeriesInstanceUID: &'a str,
+    SeriesDescription: &'a str,
+    SeriesNumber: u32,
+    SeriesDate: &'a str,
+    Modality: &'a str,
+}
+
+impl<'a> SeriesDataMeta<'a> {
+    pub fn new(d: &'a DefaultDicomObject, e: &'a PypxPathElements, StudyInstanceUID: &'a str, SeriesInstanceUID: &'a str) -> Result<Self, DicomTagReadError> {
+        let data = Self {
+            PatientID: e.PatientID,
+            StudyInstanceUID,
+            SeriesInstanceUID,
+            SeriesDescription: e.SeriesDescription,
+            SeriesNumber: e.SeriesNumber.clone(),
+            SeriesDate: e.StudyDate,
+            Modality: tt(d, tags::MODALITY)?,
+        };
+        Ok(data)
+    }
+}
 
 #[derive(Debug, Serialize)]
 pub(crate) struct InstanceData<'a> {

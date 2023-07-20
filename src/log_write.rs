@@ -27,11 +27,6 @@ pub(crate) fn write_logs(
     let series_data_dir = log_dir.join("seriesData");
     let study_data_dir = log_dir.join("studyData");
 
-    let study_series_meta_dir = study_data_dir.join(format!("{}-series", &StudyInstanceUID));
-    fs_err::create_dir_all(&study_series_meta_dir)?;
-
-
-
     // write stuff to patientData/MRN.json
     let patient_data_fname = patient_data_dir
         .join(elements.PatientID)
@@ -46,23 +41,34 @@ pub(crate) fn write_logs(
     write_json(patient_data, patient_data_fname)?;
 
     // write stuff to studyData/X.X.X.XXXXX-series/Y.Y.Y.YYYYY-meta.json
-
-    // FIXME remove null from more places
+    let study_series_meta_dir = study_data_dir.join(format!("{}-series", &StudyInstanceUID));
+    fs_err::create_dir_all(&study_series_meta_dir)?;
     let study_series_meta_fname = study_series_meta_dir.join(format!(
         "{}-meta.json",
-        elements.SOPInstanceUID.replace('\0', "")
+        &SeriesInstanceUID
     ));
-    // if !study_series_meta_fname.is_file() {
-    if true {
+    if !study_series_meta_fname.is_file() {
         let study_series_meta =
             StudyDataSeriesMeta::new(SeriesInstanceUID.to_string(), unpack.dir.to_string(), &dcm)?;
-        let data: HashMap<_, _> = [(StudyInstanceUID, study_series_meta)].into();
+        let data: HashMap<_, _> = [(&StudyInstanceUID, study_series_meta)].into();
         write_json(data, study_series_meta_fname)?;
     }
+
     // write stuff to studyData/X.X.X.XXXXX-meta.json
-    // let study_meta =
+    let study_meta_fname = study_data_dir.join(format!("{}-meta.json", &StudyInstanceUID));
+    if !study_meta_fname.is_file() {
+        let study_meta_data = StudyDataMeta::new(dcm, elements, &StudyInstanceUID)?;
+        write_json(study_meta_data, study_meta_fname)?;
+    }
 
     // write stuff to seriesData/Y.Y.Y.YYYYY-meta.json
+    let series_meta_fname = series_data_dir.join(format!("{}-meta.json", &SeriesInstanceUID));
+    if !series_meta_fname.is_file() {
+        let series_meta_data = SeriesDataMeta::new(dcm, elements, &StudyInstanceUID, &SeriesInstanceUID)?;
+        write_json(series_meta_data, series_meta_fname)?;
+    }
+
+
     // write stuff to seriesData/Y.Y.Y.YYYYY-pack.json
     let pack_fname = series_data_dir.join(format!("{}-pack.json", &SeriesInstanceUID));
     if !pack_fname.is_file() {

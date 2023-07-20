@@ -17,7 +17,7 @@ fn test_parity_with_px_repack() -> anyhow::Result<()> {
 
     let tmp_dir = TempDir::new("example")?;
     let tmp_path = Utf8Path::from_path(tmp_dir.path()).unwrap();
-    // let tmp_path = Path::new("./test_output");
+    // let tmp_path = Utf8Path::new("./test_output");
     let actual_data_dir = tmp_path.join("data");
     let actual_log_dir = tmp_path.join("log");
 
@@ -40,6 +40,22 @@ fn test_parity_with_px_repack() -> anyhow::Result<()> {
                 .collect::<Vec<String>>()
         );
         assert_json_equal(&expected_file, &actual_file);
+        println!("OK");
+    }
+
+    // assert all files present, w/o checking their contents (for now)
+    for (expected_file, actual_file) in file_by_file(&expected_log_dir, &actual_log_dir) {
+        assert!(
+            actual_file.is_file(),
+            "{} is not a file. Parent has files: {:?}",
+            &actual_file,
+            glob::glob(&actual_file.with_file_name("*").as_str())
+                .unwrap()
+                .map(|r| r
+                    .map(|p| p.to_string_lossy().to_string())
+                    .unwrap_or("INVALID".to_string()))
+                .collect::<Vec<String>>()
+        );
     }
 
     anyhow::Ok(())
@@ -98,6 +114,7 @@ fn file_by_file<'a>(
         .map(|r| r.unwrap())
         .map(Utf8PathBuf::from_path_buf)
         .map(Result::unwrap)
+        .filter(|p| p.is_file())
         .map(move |expected_path| {
             let rel = pathdiff::diff_utf8_paths(&expected_path, expected).unwrap();
             let actual_path = actual.join(rel);
