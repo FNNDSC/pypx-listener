@@ -141,13 +141,7 @@ struct ValueAndLabel {
 //     Modality: &'a str,
 // }
 //
-// #[derive(Debug, Serialize)]
-// pub(crate) struct SeriesPack {
-//     pub seriesPack: bool,
-// }
-//
-// pub(crate) const SERIES_PACK: SeriesPack = SeriesPack { seriesPack: true };
-//
+
 #[derive(Debug, Serialize)]
 pub(crate) struct InstanceData<'a> {
     PatientID: &'a str,
@@ -189,3 +183,10 @@ impl<'a> InstanceData<'a> {
 // //     FSlocation: String,
 // // }
 //
+
+#[derive(Debug, Serialize)]
+pub(crate) struct SeriesPack {
+    pub seriesPack: bool,
+}
+
+pub(crate) const SERIES_PACK: SeriesPack = SeriesPack { seriesPack: true };

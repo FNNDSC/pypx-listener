@@ -64,6 +64,10 @@ pub(crate) fn write_logs(
 
     // write stuff to seriesData/Y.Y.Y.YYYYY-meta.json
     // write stuff to seriesData/Y.Y.Y.YYYYY-pack.json
+    let pack_fname = series_data_dir.join(format!("{}-pack.json", &SeriesInstanceUID));
+    if !pack_fname.is_file() {
+        write_json(SERIES_PACK, pack_fname)?;
+    }
 
     // write stuff to seriesData/Y.Y.Y.YYYYY-img/Z.Z.Z.ZZZZZ.dcm.json
     let img_data_dir = series_data_dir.join(format!("{}-img", &SeriesInstanceUID));
