@@ -1,5 +1,5 @@
 use crate::dicom_info::DicomInfo;
-use crate::log_models::PatientData;
+use crate::log_models::{InstanceData, PatientData};
 use camino::Utf8Path;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
@@ -9,10 +9,9 @@ use std::path::PathBuf;
 
 /// Write stuff to `/home/dicom/log/{patientData,seriesData,studyData}`
 pub(crate) fn write_logs(
-    info: DicomInfo,
+    info: &DicomInfo,
     log_dir: &Utf8Path,
     pack_dir: &Utf8Path,
-    fname: &str,
 ) -> io::Result<()> {
     let patient_data_dir = log_dir.join("patientDatta");
     let series_data_dir = log_dir.join("seriesData");
@@ -22,11 +21,17 @@ pub(crate) fn write_logs(
         .join(&info.PatientID)
         .with_extension("json");
     let mut patient_data: PatientData =
-        load_json_carelessly(&patient_data_fname).unwrap_or_else(|| (&info).into());
+        load_json_carelessly(&patient_data_fname).unwrap_or_else(|| info.into());
     patient_data
         .StudyList
         .insert(info.StudyInstanceUID.to_string());
     write_json(patient_data, patient_data_fname)?;
+
+    let img_data_dir = series_data_dir.join(format!("{}-img", info.SeriesInstanceUID));
+    fs_err::create_dir_all(&img_data_dir)?;
+    let img_data_fname = img_data_dir.join(format!("{}.json", info.pypx_fname));
+    let img_data: InstanceData = info.into();
+    write_json(img_data, img_data_fname)?;
 
     Ok(())
 }

@@ -11,13 +11,13 @@ pub fn repack(
 ) -> anyhow::Result<()> {
     let dcm = dicom::object::open_file(dicom_file)?;
     let dicom_info = DicomInfo::try_from(dcm)?;
-    let (pack_dir_rel, fname) = dicom_info.to_path_parts();
+    let pack_dir_rel = dicom_info.pack_path();
     let pack_dir = data_dir.join(pack_dir_rel);
 
-    copy_or_mv(dicom_file, &pack_dir, &fname, cleanup)?;
+    copy_or_mv(dicom_file, &pack_dir, &dicom_info.pypx_fname, cleanup)?;
 
     if let Some(d) = log_dir {
-        write_logs(dicom_info, d, &pack_dir, &fname)?;
+        write_logs(&dicom_info, d, &pack_dir)?;
     }
     anyhow::Ok(())
 }
