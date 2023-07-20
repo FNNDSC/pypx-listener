@@ -3,6 +3,7 @@ use crate::pack_path::{PypxPath, PypxPathElements};
 use camino::Utf8Path;
 use dicom::core::header::Header;
 use std::path::Path;
+use anyhow::bail;
 
 pub fn repack(
     dicom_file: &Utf8Path,
@@ -14,7 +15,13 @@ pub fn repack(
     let elements = (&dcm).try_into()?;
     let unpack = PypxPath::new(&elements, data_dir);
 
-    copy_or_mv(dicom_file, &unpack.dir, &unpack.path, cleanup)?;
+    fs_err::create_dir_all(&unpack.dir)?;
+    fs_err::copy(dicom_file, &unpack.path)?;
+    // copy_or_mv(dicom_file, &unpack.path, cleanup)?;  // not working, figure out why later
+    eprintln!("{} -> {}", dicom_file, &unpack.path);
+    if !unpack.path.is_file() {  // delete me later
+        bail!("Copy failed, {} does not exist.", &unpack.path)
+    }
 
     if let Some(d) = log_dir {
         write_logs(&dcm, &elements, &unpack, d)?;
@@ -23,13 +30,11 @@ pub fn repack(
     anyhow::Ok(())
 }
 
-fn copy_or_mv<P: AsRef<Path>, Q: AsRef<Path>, R: AsRef<Path>>(
+fn copy_or_mv<P: AsRef<Path>, Q: AsRef<Path>>(
     src: P,
-    dst_dir: Q,
-    dst: R,
+    dst: Q,
     cleanup: bool,
 ) -> std::io::Result<()> {
-    fs_err::create_dir_all(&dst_dir)?;
     if cleanup {
         mv(src, dst)?;
     } else {

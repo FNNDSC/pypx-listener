@@ -22,4 +22,4 @@ RUN apt-get update \
 COPY --from=builder /app/target/release/rx-repack /usr/local/bin/rx-repack
 
 EXPOSE 11113
-CMD ["storescp", "--fork", "-od", "/var/received_dicoms", "-pm", "-sp", "-xcr", "px-recount --xcrdir '#p' --xcrfile '#f' --verbosity 0 --logdir /home/dicom/log --datadir /home/dicom/data --cleanup", "11113"]
+CMD ["storescp", "--fork", "-od", "/var/received_dicoms", "-pm", "-sp", "-xcr", "rx-repack --xcrdir '#p' --xcrfile '#f' --verbosity 0 --logdir /home/dicom/log --datadir /home/dicom/data --cleanup", "11113"]
