@@ -1,6 +1,6 @@
 use crate::log_models::*;
 use crate::pack_path::{PypxPath, PypxPathElements};
-use crate::tt;
+use crate::helpers::tt;
 use camino::Utf8Path;
 use dicom::dictionary_std::tags;
 use dicom::object::DefaultDicomObject;
@@ -24,8 +24,8 @@ pub(crate) fn write_logs(
     let series_data_dir = log_dir.join("seriesData");
     let study_data_dir = log_dir.join("studyData");
 
-    let StudyInstanceUID = tt!(&dcm, tags::STUDY_INSTANCE_UID)?;
-    let SeriesInstanceUID = tt!(&dcm, tags::SERIES_INSTANCE_UID)?;
+    let StudyInstanceUID = tt(&dcm, tags::STUDY_INSTANCE_UID)?;
+    let SeriesInstanceUID = tt(&dcm, tags::SERIES_INSTANCE_UID)?;
 
     // write stuff to patientData/MRN.json
     let patient_data_fname = patient_data_dir

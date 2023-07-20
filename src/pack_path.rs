@@ -1,6 +1,6 @@
 //! Functions for deciding where to copy the received DICOM to.
 use crate::errors::DicomTagReadError;
-use crate::tt;
+use crate::helpers::tt;
 use camino::{Utf8Path, Utf8PathBuf};
 use dicom::dictionary_std::tags;
 use dicom::object::{DefaultDicomObject, Tag};
@@ -71,16 +71,16 @@ impl<'a> TryFrom<&'a DefaultDicomObject> for PypxPathElements<'a> {
         // - dcm.element(...)?.string() produces a reference to the data w/o cloning nor parsing
         // - dcm.element is more efficient than dcm.element_by_name, sinnce the latter does a map lookup
         let data = Self {
-            InstanceNumber: tt!(&dcm, tags::INSTANCE_NUMBER)?,
-            SOPInstanceUID: tt!(&dcm, tags::SOP_INSTANCE_UID)?,
-            PatientID: tt!(&dcm, tags::PATIENT_ID)?,
-            PatientName: tt!(&dcm, tags::PATIENT_NAME)?,
-            PatientBirthDate: tt!(&dcm, tags::PATIENT_BIRTH_DATE)?,
-            StudyDescription: tt!(&dcm, tags::STUDY_DESCRIPTION)?,
-            AccessionNumnber: tt!(&dcm, tags::ACCESSION_NUMBER)?,
-            StudyDate: tt!(&dcm, tags::STUDY_DATE)?,
-            SeriesNumber: tt!(&dcm, tags::SERIES_NUMBER)?,
-            SeriesDescription: tt!(&dcm, tags::SERIES_DESCRIPTION)?,
+            InstanceNumber: tt(&dcm, tags::INSTANCE_NUMBER)?,
+            SOPInstanceUID: tt(&dcm, tags::SOP_INSTANCE_UID)?,
+            PatientID: tt(&dcm, tags::PATIENT_ID)?,
+            PatientName: tt(&dcm, tags::PATIENT_NAME)?,
+            PatientBirthDate: tt(&dcm, tags::PATIENT_BIRTH_DATE)?,
+            StudyDescription: tt(&dcm, tags::STUDY_DESCRIPTION)?,
+            AccessionNumnber: tt(&dcm, tags::ACCESSION_NUMBER)?,
+            StudyDate: tt(&dcm, tags::STUDY_DATE)?,
+            SeriesNumber: tt(&dcm, tags::SERIES_NUMBER)?,
+            SeriesDescription: tt(&dcm, tags::SERIES_DESCRIPTION)?,
         };
         Ok(data)
     }

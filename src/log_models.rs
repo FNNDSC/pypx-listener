@@ -3,7 +3,7 @@
 
 use crate::errors::DicomTagReadError;
 use crate::pack_path::PypxPathElements;
-use crate::tt;
+use crate::helpers::tt;
 use dicom::core::header::Header;
 use dicom::core::value::CastValueError;
 use dicom::core::{DataDictionary, Tag};
@@ -29,9 +29,9 @@ impl<'a> PatientData<'a> {
         e: &'a PypxPathElements,
     ) -> Result<Self, DicomTagReadError> {
         {
-            let name = tt!(&d, tags::PATIENT_NAME)?;
-            let age = tt!(&d, tags::PATIENT_AGE)?;
-            let sex = tt!(&d, tags::PATIENT_SEX)?;
+            let name = tt(&d, tags::PATIENT_NAME)?;
+            let age = tt(&d, tags::PATIENT_AGE)?;
+            let sex = tt(&d, tags::PATIENT_SEX)?;
             let patient = Self {
                 PatientID: Cow::Borrowed(e.PatientID),
                 PatientName: Cow::Borrowed(name),
