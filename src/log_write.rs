@@ -25,6 +25,7 @@ pub(crate) fn write_logs(
     let study_data_dir = log_dir.join("studyData");
 
     let StudyInstanceUID = tt!(&dcm, tags::STUDY_INSTANCE_UID)?;
+    let SeriesInstanceUID = tt!(&dcm, tags::SERIES_INSTANCE_UID)?;
 
     // write stuff to patientData/MRN.json
     let patient_data_fname = patient_data_dir
@@ -40,13 +41,18 @@ pub(crate) fn write_logs(
     write_json(patient_data, patient_data_fname)?;
 
     // write stuff to studyData/X.X.X.XXXXX-series/Y.Y.Y.YYYYY-meta.json
-    // let study_series_meta_dir = study_data_dir
-    //     .join(format!("{}-series", info.StudyInstanceUID));
-    // fs_err::create_dir_all(&study_series_meta_dir)?;
-    // let study_series_meta_fname = study_series_meta_dir.join(format!("{}-meta.json", elements.SOPInstanceUID));
-    // if !study_series_meta_fname.is_file() {
-    //     todo!()
-    // }
+    let study_series_meta_dir = study_data_dir.join(format!("{}-series", StudyInstanceUID));
+    fs_err::create_dir_all(&study_series_meta_dir)?;
+    // FIXME remove null from more places
+    let study_series_meta_fname = study_series_meta_dir.join(format!(
+        "{}-meta.json",
+        elements.SOPInstanceUID.replace('\0', "")
+    ));
+    if !study_series_meta_fname.is_file() {
+        let study_series_meta =
+            StudyDataSeriesMeta::new(SeriesInstanceUID.to_string(), unpack.dir.to_string(), &dcm)?;
+        write_json(study_series_meta, study_series_meta_fname)?;
+    }
     // write stuff to studyData/X.X.X.XXXXX-meta.json
     // let study_meta =
 

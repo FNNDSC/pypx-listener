@@ -4,7 +4,10 @@
 use crate::errors::DicomTagReadError;
 use crate::pack_path::PypxPathElements;
 use crate::tt;
-use dicom::dictionary_std::tags;
+use dicom::core::header::Header;
+use dicom::core::value::CastValueError;
+use dicom::core::{DataDictionary, Tag};
+use dicom::dictionary_std::{tags, StandardDataDictionary};
 use dicom::object::DefaultDicomObject;
 use hashbrown::{HashMap, HashSet};
 use serde::{Deserialize, Serialize};
@@ -51,19 +54,55 @@ impl<'a> PatientData<'a> {
 //     PerformedStationAETitle: &'a str,
 // }
 //
-// #[derive(Debug, Serialize)]
-// struct StudyDataSeriesMeta {
-//     SeriesInstanceUID: String,
-//     SeriesBaseDir: String,
-//     DICOM: HashMap<String, ValueAndLabel>,
-// }
-//
-// #[derive(Debug, Serialize)]
-// struct ValueAndLabel {
-//     value: String,
-//     label: String,
-// }
-//
+#[derive(Debug, Serialize)]
+pub(crate) struct StudyDataSeriesMeta {
+    SeriesInstanceUID: String,
+    SeriesBaseDir: String,
+    DICOM: HashMap<String, ValueAndLabel>,
+}
+
+impl StudyDataSeriesMeta {
+    pub fn new(
+        SeriesInstanceUID: String,
+        SeriesBaseDir: String,
+        dcm: &DefaultDicomObject,
+    ) -> Result<StudyDataSeriesMeta, CastValueError> {
+        // TODO: some elements are deeply nested, such as ReferencedImageSequence
+        // TODO: SAG-anon has a DICOM tag (0019,0010)
+        let DICOM = dcm
+            .iter()
+            .map(|ele| {
+                let label = name_of(ele.tag())?.to_string();
+                let value = ele.value().to_str().ok()?.to_string();
+                Some((label.to_string(), ValueAndLabel { value, label }))
+            })
+            .filter_map(|e| e)
+            .collect::<HashMap<String, ValueAndLabel>>();
+        Ok(Self {
+            SeriesInstanceUID,
+            SeriesBaseDir,
+            DICOM,
+        })
+    }
+}
+
+fn name_of(tag: Tag) -> Option<&'static str> {
+    StandardDataDictionary.by_tag(tag).map(|e| e.alias)
+}
+
+impl TryFrom<&DefaultDicomObject> for StudyDataSeriesMeta {
+    type Error = DicomTagReadError;
+    fn try_from(dcm: &DefaultDicomObject) -> Result<Self, Self::Error> {
+        todo!()
+    }
+}
+
+#[derive(Debug, Serialize)]
+struct ValueAndLabel {
+    value: String,
+    label: String,
+}
+
 // #[derive(Debug, Serialize)]
 // struct SeriesDataMeta<'a> {
 //     PatientID: &'a str,

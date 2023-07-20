@@ -26,11 +26,10 @@ pub fn repack(
 fn copy_or_mv<P: AsRef<Path>, Q: AsRef<Path>, R: AsRef<Path>>(
     src: P,
     dst_dir: Q,
-    fname: R,
+    dst: R,
     cleanup: bool,
 ) -> std::io::Result<()> {
     fs_err::create_dir_all(&dst_dir)?;
-    let dst = dst_dir.as_ref().join(fname);
     if cleanup {
         mv(src, dst)?;
     } else {
