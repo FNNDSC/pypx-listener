@@ -34,7 +34,9 @@ fn test_parity_with_px_repack() -> anyhow::Result<()> {
             &actual_file,
             glob::glob(&actual_file.with_file_name("*").as_str())
                 .unwrap()
-                .map(|r| r.map(|p| p.to_string_lossy().to_string()).unwrap_or("INVALID".to_string()))
+                .map(|r| r
+                    .map(|p| p.to_string_lossy().to_string())
+                    .unwrap_or("INVALID".to_string()))
                 .collect::<Vec<String>>()
         );
         assert_json_equal(&expected_file, &actual_file);

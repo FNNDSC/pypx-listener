@@ -1,50 +1,64 @@
-use crate::dicom_info::DicomInfo;
-use crate::log_models::{InstanceData, PatientData};
+use crate::log_models::*;
+use crate::pack_path::{PypxPath, PypxPathElements};
+use crate::tt;
 use camino::Utf8Path;
+use dicom::dictionary_std::tags;
+use dicom::object::DefaultDicomObject;
 use hashbrown::HashMap;
-use serde::Serialize;
 use serde::de::DeserializeOwned;
+use serde::Serialize;
 use std::io;
 use std::io::{BufReader, BufWriter};
 use std::path::PathBuf;
 
-
 /// Write *pypx* stuff to `/home/dicom/log/{patientData,seriesData,studyData}`.
 /// The stuff is read by downstream _pypx_ programs such as `px-register`, `px-status`.
+#[allow(non_snake_case)]
 pub(crate) fn write_logs(
-    info: &DicomInfo,
+    dcm: &DefaultDicomObject,
+    elements: &PypxPathElements,
+    unpack: &PypxPath,
     log_dir: &Utf8Path,
-    pack_dir: &Utf8Path,
-) -> io::Result<()> {
+) -> anyhow::Result<()> {
     let patient_data_dir = log_dir.join("patientData");
     let series_data_dir = log_dir.join("seriesData");
     let study_data_dir = log_dir.join("studyData");
 
+    let StudyInstanceUID = tt!(&dcm, tags::STUDY_INSTANCE_UID)?;
+
     // write stuff to patientData/MRN.json
     let patient_data_fname = patient_data_dir
-        .join(&info.PatientID)
+        .join(elements.PatientID)
         .with_extension("json");
     let mut patient_data: HashMap<String, PatientData> =
         load_json_carelessly(&patient_data_fname).unwrap_or_else(|| HashMap::with_capacity(1));
     patient_data
-        .entry_ref(&info.PatientID)
-        .or_insert_with(|| info.into())
+        .entry_ref(elements.PatientID)
+        .or_insert_with(|| PatientData::new(&dcm, &elements).unwrap()) // FIXME
         .StudyList
-        .insert(info.StudyInstanceUID.to_string());
+        .insert(StudyInstanceUID.to_string());
     write_json(patient_data, patient_data_fname)?;
 
-    // write stuff to studyData/X.X.X.XXXXX-meta.json
     // write stuff to studyData/X.X.X.XXXXX-series/Y.Y.Y.YYYYY-meta.json
+    // let study_series_meta_dir = study_data_dir
+    //     .join(format!("{}-series", info.StudyInstanceUID));
+    // fs_err::create_dir_all(&study_series_meta_dir)?;
+    // let study_series_meta_fname = study_series_meta_dir.join(format!("{}-meta.json", elements.SOPInstanceUID));
+    // if !study_series_meta_fname.is_file() {
+    //     todo!()
+    // }
+    // write stuff to studyData/X.X.X.XXXXX-meta.json
+    // let study_meta =
 
     // write stuff to seriesData/Y.Y.Y.YYYYY-meta.json
     // write stuff to seriesData/Y.Y.Y.YYYYY-pack.json
 
     // write stuff to seriesData/Y.Y.Y.YYYYY-img/Z.Z.Z.ZZZZZ.dcm.json
-    let img_data_dir = series_data_dir.join(format!("{}-img", info.SeriesInstanceUID));
-    fs_err::create_dir_all(&img_data_dir)?;
-    let img_data_fname = img_data_dir.join(format!("{}.json", info.pypx_fname));
-    let img_data: InstanceData = info.into();
-    write_json(img_data, img_data_fname)?;
+    // let img_data_dir = series_data_dir.join(format!("{}-img", todo!()));
+    // fs_err::create_dir_all(&img_data_dir)?;
+    // let img_data_fname = img_data_dir.join(format!("{}.json", unpack.fname));
+    // let img_data: InstanceData = info.into();
+    // write_json(img_data, img_data_fname)?;
 
     Ok(())
 }
@@ -71,4 +85,3 @@ fn write_json<S: Serialize, P: AsRef<Utf8Path>>(data: S, p: P) -> io::Result<()>
     serde_json::to_writer_pretty(writer, &data).unwrap();
     Ok(())
 }
-

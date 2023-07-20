@@ -1,6 +1,7 @@
-use crate::dicom_info::DicomInfo;
 use crate::log_write::write_logs;
+use crate::pack_path::{PypxPath, PypxPathElements};
 use camino::Utf8Path;
+use dicom::core::header::Header;
 use std::path::Path;
 
 pub fn repack(
@@ -10,15 +11,15 @@ pub fn repack(
     cleanup: bool,
 ) -> anyhow::Result<()> {
     let dcm = dicom::object::open_file(dicom_file)?;
-    let dicom_info = DicomInfo::try_from(dcm)?;
-    let pack_dir_rel = dicom_info.pack_path();
-    let pack_dir = data_dir.join(pack_dir_rel);
+    let elements = (&dcm).try_into()?;
+    let unpack = PypxPath::new(&elements, data_dir);
 
-    copy_or_mv(dicom_file, &pack_dir, &dicom_info.pypx_fname, cleanup)?;
+    copy_or_mv(dicom_file, &unpack.dir, &unpack.path, cleanup)?;
 
     if let Some(d) = log_dir {
-        write_logs(&dicom_info, d, &pack_dir)?;
+        write_logs(&dcm, &elements, &unpack, d)?;
     }
+
     anyhow::Ok(())
 }
 
