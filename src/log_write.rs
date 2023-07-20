@@ -1,6 +1,6 @@
+use crate::helpers::tt;
 use crate::log_models::*;
 use crate::pack_path::{PypxPath, PypxPathElements};
-use crate::helpers::tt;
 use camino::Utf8Path;
 use dicom::dictionary_std::tags;
 use dicom::object::DefaultDicomObject;
@@ -48,10 +48,12 @@ pub(crate) fn write_logs(
         "{}-meta.json",
         elements.SOPInstanceUID.replace('\0', "")
     ));
-    if !study_series_meta_fname.is_file() {
+    // if !study_series_meta_fname.is_file() {
+    if true {
         let study_series_meta =
             StudyDataSeriesMeta::new(SeriesInstanceUID.to_string(), unpack.dir.to_string(), &dcm)?;
-        write_json(study_series_meta, study_series_meta_fname)?;
+        let data: HashMap<_, _> = [(StudyInstanceUID, study_series_meta)].into();
+        write_json(data, study_series_meta_fname)?;
     }
     // write stuff to studyData/X.X.X.XXXXX-meta.json
     // let study_meta =

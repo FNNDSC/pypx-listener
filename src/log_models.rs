@@ -1,14 +1,15 @@
 //! Models of what gets written to `/home/dicom/log`.
 #![allow(non_snake_case)]
 
-use crate::errors::DicomTagReadError;
-use crate::pack_path::PypxPathElements;
+use crate::errors::{DicomElementSerializationError, DicomTagReadError};
 use crate::helpers::tt;
+use crate::pack_path::PypxPathElements;
 use dicom::core::header::Header;
-use dicom::core::value::CastValueError;
-use dicom::core::{DataDictionary, Tag};
+use dicom::core::value::{CastValueError, Value};
+use dicom::core::{DataDictionary, Tag, VR};
 use dicom::dictionary_std::{tags, StandardDataDictionary};
-use dicom::object::DefaultDicomObject;
+use dicom::object::mem::{InMemElement, InMemFragment};
+use dicom::object::{DefaultDicomObject, InMemDicomObject};
 use hashbrown::{HashMap, HashSet};
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
@@ -67,16 +68,11 @@ impl StudyDataSeriesMeta {
         SeriesBaseDir: String,
         dcm: &DefaultDicomObject,
     ) -> Result<StudyDataSeriesMeta, CastValueError> {
-        // TODO: some elements are deeply nested, such as ReferencedImageSequence
-        // TODO: SAG-anon has a DICOM tag (0019,0010)
         let DICOM = dcm
             .iter()
-            .map(|ele| {
-                let label = name_of(ele.tag())?.to_string();
-                let value = ele.value().to_str().ok()?.to_string();
-                Some((label.to_string(), ValueAndLabel { value, label }))
-            })
-            .filter_map(|e| e)
+            .map(ValueAndLabel::try_from)
+            .filter_map(|r| r.ok())
+            .map(|v| (v.label.to_string(), v))
             .collect::<HashMap<String, ValueAndLabel>>();
         Ok(Self {
             SeriesInstanceUID,
@@ -86,7 +82,38 @@ impl StudyDataSeriesMeta {
     }
 }
 
+impl TryFrom<&InMemElement> for ValueAndLabel {
+    type Error = DicomElementSerializationError;
+    fn try_from(ele: &InMemElement) -> Result<Self, Self::Error> {
+        let tag = ele.tag();
+        if tag == tags::PIXEL_DATA {
+            return Err(DicomElementSerializationError::Excluded(tag));
+        }
+        let label = name_of(tag)
+            .ok_or_else(|| DicomElementSerializationError::UnknownTagError(tag))?
+            .to_string();
+        if matches!(ele.value(), Value::PixelSequence { .. }) {
+            return Err(DicomElementSerializationError::Excluded(tag));
+        }
+        //
+        // if &label == "ReferencedImageSequence" {
+        //     dbg!(ele.value().to_multi_str().unwrap());
+        // }
+        //
+
+        /// TODO serialize numbers and Item such as ReferencedImageSequence
+        let mut values = ele.to_multi_str()?.to_vec();
+        let value = if values.len() == 1 {
+            values.swap_remove(0)
+        } else {
+            serde_json::to_string(&values)?
+        };
+        Ok(Self { label, value })
+    }
+}
+
 fn name_of(tag: Tag) -> Option<&'static str> {
+    // WHY SAG-anon has a DICOM tag (0019,0010)?
     StandardDataDictionary.by_tag(tag).map(|e| e.alias)
 }
 
