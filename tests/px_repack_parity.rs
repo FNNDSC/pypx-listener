@@ -3,13 +3,12 @@ extern crate tempdir;
 use anyhow::{bail, Context};
 use camino::{Utf8Path, Utf8PathBuf};
 use rx_repack::repack;
-use std::collections::HashMap;
 use std::io::BufReader;
 use std::path::Path;
 use std::process::Command;
 use tempdir::TempDir;
 
-const EXAMPLES_DIR: &str = "./examples/";
+const EXAMPLES_DIR: &str = "examples/";
 
 #[test]
 fn test_parity_with_px_repack() -> anyhow::Result<()> {
@@ -29,7 +28,15 @@ fn test_parity_with_px_repack() -> anyhow::Result<()> {
     let actual_patient_data_dir = actual_log_dir.join("patientData");
     let patient_data_pairs = file_by_file(&expected_patient_data_dir, &actual_patient_data_dir);
     for (expected_file, actual_file) in patient_data_pairs {
-        assert!(actual_file.is_file());
+        assert!(
+            actual_file.is_file(),
+            "{} is not a file. Parent has files: {:?}",
+            &actual_file,
+            glob::glob(&actual_file.with_file_name("*").as_str())
+                .unwrap()
+                .map(|r| r.map(|p| p.to_string_lossy().to_string()).unwrap_or("INVALID".to_string()))
+                .collect::<Vec<String>>()
+        );
         assert_json_equal(&expected_file, &actual_file);
     }
 
@@ -72,7 +79,7 @@ fn assert_json_equal(expected: &Utf8Path, actual: &Utf8Path) {
     )
 }
 
-fn load_json<P: AsRef<Path>>(p: P) -> HashMap<String, String> {
+fn load_json<P: AsRef<Path>>(p: P) -> serde_json::Value {
     let file = fs_err::File::open(p.as_ref()).unwrap();
     let reader = BufReader::new(file);
     serde_json::from_reader(reader).unwrap()
@@ -82,7 +89,7 @@ fn file_by_file<'a>(
     expected: &'a Utf8Path,
     actual: &'a Utf8Path,
 ) -> impl Iterator<Item = (Utf8PathBuf, Utf8PathBuf)> + 'a {
-    let s = expected.join("**").into_os_string();
+    let s = expected.join("**/*").into_os_string();
     let p = s.to_str().unwrap();
     glob::glob(p)
         .unwrap()

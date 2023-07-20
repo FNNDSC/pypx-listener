@@ -1,11 +1,13 @@
 use crate::dicom_info::DicomInfo;
 use crate::log_models::{InstanceData, PatientData};
 use camino::Utf8Path;
-use serde::de::DeserializeOwned;
+use hashbrown::HashMap;
 use serde::Serialize;
+use serde::de::DeserializeOwned;
 use std::io;
 use std::io::{BufReader, BufWriter};
 use std::path::PathBuf;
+
 
 /// Write *pypx* stuff to `/home/dicom/log/{patientData,seriesData,studyData}`.
 /// The stuff is read by downstream _pypx_ programs such as `px-register`, `px-status`.
@@ -22,9 +24,11 @@ pub(crate) fn write_logs(
     let patient_data_fname = patient_data_dir
         .join(&info.PatientID)
         .with_extension("json");
-    let mut patient_data: PatientData =
-        load_json_carelessly(&patient_data_fname).unwrap_or_else(|| info.into());
+    let mut patient_data: HashMap<String, PatientData> =
+        load_json_carelessly(&patient_data_fname).unwrap_or_else(|| HashMap::with_capacity(1));
     patient_data
+        .entry_ref(&info.PatientID)
+        .or_insert_with(|| info.into())
         .StudyList
         .insert(info.StudyInstanceUID.to_string());
     write_json(patient_data, patient_data_fname)?;
@@ -67,3 +71,4 @@ fn write_json<S: Serialize, P: AsRef<Utf8Path>>(data: S, p: P) -> io::Result<()>
     serde_json::to_writer_pretty(writer, &data).unwrap();
     Ok(())
 }
+
