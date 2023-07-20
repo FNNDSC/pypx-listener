@@ -20,12 +20,17 @@ pub(crate) fn write_logs(
     unpack: &PypxPath,
     log_dir: &Utf8Path,
 ) -> anyhow::Result<()> {
+    let StudyInstanceUID = tt(&dcm, tags::STUDY_INSTANCE_UID)?.replace('\0', "");
+    let SeriesInstanceUID = tt(&dcm, tags::SERIES_INSTANCE_UID)?.replace('\0', "");
+
     let patient_data_dir = log_dir.join("patientData");
     let series_data_dir = log_dir.join("seriesData");
     let study_data_dir = log_dir.join("studyData");
 
-    let StudyInstanceUID = tt(&dcm, tags::STUDY_INSTANCE_UID)?;
-    let SeriesInstanceUID = tt(&dcm, tags::SERIES_INSTANCE_UID)?;
+    let study_series_meta_dir = study_data_dir.join(format!("{}-series", &StudyInstanceUID));
+    fs_err::create_dir_all(&study_series_meta_dir)?;
+
+
 
     // write stuff to patientData/MRN.json
     let patient_data_fname = patient_data_dir
@@ -41,8 +46,7 @@ pub(crate) fn write_logs(
     write_json(patient_data, patient_data_fname)?;
 
     // write stuff to studyData/X.X.X.XXXXX-series/Y.Y.Y.YYYYY-meta.json
-    let study_series_meta_dir = study_data_dir.join(format!("{}-series", StudyInstanceUID));
-    fs_err::create_dir_all(&study_series_meta_dir)?;
+
     // FIXME remove null from more places
     let study_series_meta_fname = study_series_meta_dir.join(format!(
         "{}-meta.json",
@@ -62,11 +66,11 @@ pub(crate) fn write_logs(
     // write stuff to seriesData/Y.Y.Y.YYYYY-pack.json
 
     // write stuff to seriesData/Y.Y.Y.YYYYY-img/Z.Z.Z.ZZZZZ.dcm.json
-    // let img_data_dir = series_data_dir.join(format!("{}-img", todo!()));
-    // fs_err::create_dir_all(&img_data_dir)?;
-    // let img_data_fname = img_data_dir.join(format!("{}.json", unpack.fname));
-    // let img_data: InstanceData = info.into();
-    // write_json(img_data, img_data_fname)?;
+    let img_data_dir = series_data_dir.join(format!("{}-img", &SeriesInstanceUID));
+    fs_err::create_dir_all(&img_data_dir)?;
+    let img_data_fname = img_data_dir.join(format!("{}.json", unpack.fname));
+    let img_data = InstanceData::new(dcm, elements, &unpack.fname)?;
+    write_json(img_data, img_data_fname)?;
 
     Ok(())
 }

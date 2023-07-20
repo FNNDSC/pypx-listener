@@ -1,6 +1,10 @@
+use std::num::ParseIntError;
+
 /// Error reading a DICOM tag's value.
 #[derive(thiserror::Error, Debug)]
 pub(crate) enum DicomTagReadError {
+    #[error(transparent)]  // better error message would be nice
+    ParseIntError(#[from] ParseIntError),
     #[error(transparent)]
     NotFound(#[from] dicom::object::Error),
     #[error("{tag:?} tag value is not a string")]

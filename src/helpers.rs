@@ -6,6 +6,7 @@ use dicom::object::DefaultDicomObject;
 ///
 /// I tried to make this helper function low-cost.
 pub(crate) fn tt(dcm: &DefaultDicomObject, tag: Tag) -> Result<&str, DicomTagReadError> {
+    // TODO make this a method, and maybe we should call replace('\0', "")
     dcm.element(tag).map_err(|e| e.into()).and_then(|e| {
         e.string()
             .map(|s| s.trim())

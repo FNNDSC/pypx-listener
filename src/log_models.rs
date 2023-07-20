@@ -148,20 +148,38 @@ struct ValueAndLabel {
 //
 // pub(crate) const SERIES_PACK: SeriesPack = SeriesPack { seriesPack: true };
 //
-// #[derive(Debug, Serialize)]
-// pub(crate) struct InstanceData<'a> {
-//     PatientID: &'a str,
-//     StudyInstanceUID: &'a str,
-//     SeriesInstanceUID: &'a str,
-//     SeriesDescription: &'a str,
-//     SeriesNumber: u32,
-//     SeriesDate: &'a str,
-//     Modality: &'a str,
-//     outputFile: &'a str,
-//     // TODO we don't include imageObj because I don't think it's used anywhwere.
-//     // Trying to get this information is annoying.
-//     // imageObj: HashMap<String, FileStat>,
-// }
+#[derive(Debug, Serialize)]
+pub(crate) struct InstanceData<'a> {
+    PatientID: &'a str,
+    StudyInstanceUID: &'a str,
+    SeriesInstanceUID: &'a str,
+    SeriesDescription: &'a str,
+    SeriesNumber: u32,
+    SeriesDate: &'a str,
+    Modality: &'a str,
+    outputFile: &'a str,
+    // TODO we don't include imageObj because I don't think it's used anywhwere.
+    // Trying to get this information is annoying.
+    // imageObj: HashMap<String, FileStat>,
+}
+
+impl<'a> InstanceData<'a> {
+    pub fn new(d: &'a DefaultDicomObject, e: &'a PypxPathElements, outputFile: &'a str) -> Result<Self, DicomTagReadError> {
+        let data = Self {
+            PatientID: e.PatientID,
+            StudyInstanceUID: tt(d, tags::STUDY_INSTANCE_UID)?,
+            SeriesInstanceUID: tt(d, tags::SERIES_INSTANCE_UID)?,
+            SeriesDescription: tt(d, tags::SERIES_DESCRIPTION)?,
+            SeriesNumber: tt(d, tags::SERIES_NUMBER)?.parse()?,
+            SeriesDate: tt(d, tags::SERIES_DATE)?,
+            Modality: tt(d, tags::MODALITY)?,
+            outputFile,
+        };
+        Ok(data)
+    }
+}
+
+
 //
 // // /// Unimportant information about a file's stat metadata.
 // // /// Not complete.
@@ -171,17 +189,3 @@ struct ValueAndLabel {
 // //     FSlocation: String,
 // // }
 //
-// impl<'a> From<&'a DicomInfo> for InstanceData<'a> {
-//     fn from(d: &'a DicomInfo) -> Self {
-//         Self {
-//             PatientID: &d.PatientID,
-//             StudyInstanceUID: &d.StudyInstanceUID,
-//             SeriesInstanceUID: &d.SeriesInstanceUID,
-//             SeriesDescription: &d.SeriesDescription,
-//             SeriesNumber: d.SeriesNumber.clone(),
-//             SeriesDate: &d.SeriesDate,
-//             Modality: &d.Modality,
-//             outputFile: &d.pypx_fname,
-//         }
-//     }
-// }
