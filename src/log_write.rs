@@ -80,7 +80,8 @@ pub(crate) fn write_logs(
     fs_err::create_dir_all(&img_data_dir)?;
     let img_data_fname = img_data_dir.join(format!("{}.json", unpack.fname));
     let img_data = InstanceData::new(dcm, elements, &unpack.fname, unpack.path.to_string())?;
-    write_json(img_data, img_data_fname)?;
+    let data: HashMap<_, _> = [(&SeriesInstanceUID, img_data)].into();
+    write_json(data, img_data_fname)?;
 
     Ok(())
 }
