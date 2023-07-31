@@ -45,13 +45,6 @@ jobs:
     needs: [ test ]
     runs-on: ubuntu-22.04
 
-    # A local registry helps us reuse the built image between steps
-    services:
-      registry:
-        image: registry:2
-        ports:
-          - 5000:5000
-
     steps:
     - name: Get git tag
       id: git_info
@@ -95,10 +88,8 @@ jobs:
       with:
         context: .
         file: ./Dockerfile
-        tags: localhost:5000/${{ steps.determine.outputs.dock_image }}
-#        platforms: linux/amd64,linux/arm64/v8,linux/arm/v7
-        platforms: linux/amd64
-        push: true
+        tags: localhost/${{ steps.determine.outputs.dock_image }}
+        load: true
         cache-from: type=local,src=/tmp/.buildx-cache
         cache-to: type=local,dest=/tmp/.buildx-cache
         build-args: |
@@ -131,7 +122,6 @@ jobs:
         context: .
         file: ./Dockerfile
         tags: |
-          localhost:5000/${{ steps.determine.outputs.dock_image }}
           docker.io/${{ steps.determine.outputs.dock_image }}
           ghcr.io/${{ steps.determine.outputs.dock_image }}
         platforms: linux/amd64
