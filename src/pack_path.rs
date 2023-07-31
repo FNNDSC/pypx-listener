@@ -34,7 +34,7 @@ impl PypxPath {
             "{:0>4}-{}.dcm",
             dcm.InstanceNumber, dcm.SOPInstanceUID
         ));
-        let pack_dir = data_dir.join(&pack_dir_rel);
+        let pack_dir = data_dir.join(pack_dir_rel);
         let path = pack_dir.join(&fname);
         Self {
             fname,
@@ -71,18 +71,18 @@ impl<'a> TryFrom<&'a DefaultDicomObject> for PypxPathElements<'a> {
         // - dcm.element(...)?.string() produces a reference to the data w/o cloning nor parsing
         // - dcm.element is more efficient than dcm.element_by_name, sinnce the latter does a map lookup
         let data = Self {
-            InstanceNumber: tt(&dcm, tags::INSTANCE_NUMBER)?,
-            SOPInstanceUID: tt(&dcm, tags::SOP_INSTANCE_UID)?,
-            PatientID: tt(&dcm, tags::PATIENT_ID)?,
-            PatientName: tt(&dcm, tags::PATIENT_NAME)?,
-            PatientBirthDate: tt(&dcm, tags::PATIENT_BIRTH_DATE)?,
-            StudyDescription: tt(&dcm, tags::STUDY_DESCRIPTION)?,
-            AccessionNumnber: tt(&dcm, tags::ACCESSION_NUMBER)?,
-            StudyDate: tt(&dcm, tags::STUDY_DATE)?,
-            SeriesNumber: tt(&dcm, tags::SERIES_NUMBER)?.parse()?,
-            SeriesDescription: tt(&dcm, tags::SERIES_DESCRIPTION)?,
-            StudyInstanceUID: tts(&dcm, tags::STUDY_INSTANCE_UID)?,
-            SeriesInstanceUID: tts(&dcm, tags::SERIES_INSTANCE_UID)?,
+            InstanceNumber: tt(dcm, tags::INSTANCE_NUMBER)?,
+            SOPInstanceUID: tt(dcm, tags::SOP_INSTANCE_UID)?,
+            PatientID: tt(dcm, tags::PATIENT_ID)?,
+            PatientName: tt(dcm, tags::PATIENT_NAME)?,
+            PatientBirthDate: tt(dcm, tags::PATIENT_BIRTH_DATE)?,
+            StudyDescription: tt(dcm, tags::STUDY_DESCRIPTION)?,
+            AccessionNumnber: tt(dcm, tags::ACCESSION_NUMBER)?,
+            StudyDate: tt(dcm, tags::STUDY_DATE)?,
+            SeriesNumber: tt(dcm, tags::SERIES_NUMBER)?.parse()?,
+            SeriesDescription: tt(dcm, tags::SERIES_DESCRIPTION)?,
+            StudyInstanceUID: tts(dcm, tags::STUDY_INSTANCE_UID)?,
+            SeriesInstanceUID: tts(dcm, tags::SERIES_INSTANCE_UID)?,
         };
         Ok(data)
     }

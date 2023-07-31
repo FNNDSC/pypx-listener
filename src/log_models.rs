@@ -30,9 +30,9 @@ impl<'a> PatientData<'a> {
         e: &'a PypxPathElements,
     ) -> Result<Self, DicomTagReadError> {
         {
-            let name = tt(&d, tags::PATIENT_NAME)?;
-            let age = tt(&d, tags::PATIENT_AGE)?;
-            let sex = tt(&d, tags::PATIENT_SEX)?;
+            let name = tt(d, tags::PATIENT_NAME)?;
+            let age = tt(d, tags::PATIENT_AGE)?;
+            let sex = tt(d, tags::PATIENT_SEX)?;
             let patient = Self {
                 PatientID: Cow::Borrowed(e.PatientID),
                 PatientName: Cow::Borrowed(name),
@@ -65,7 +65,7 @@ impl<'a> StudyDataMeta<'a> {
             StudyDescription: e.StudyDescription,
             StudyDate: e.StudyDate,
             StudyInstanceUID: &e.StudyInstanceUID,
-            PerformedStationAETitle: tt(&d, tags::PERFORMED_STATION_AE_TITLE).unwrap_or(""),
+            PerformedStationAETitle: tt(d, tags::PERFORMED_STATION_AE_TITLE).unwrap_or(""),
         };
         Ok(data)
     }
@@ -198,7 +198,7 @@ impl<'a> SeriesDataMeta<'a> {
             StudyInstanceUID: &e.StudyInstanceUID,
             SeriesInstanceUID: &e.SeriesInstanceUID,
             SeriesDescription: e.SeriesDescription,
-            SeriesNumber: e.SeriesNumber.clone(),
+            SeriesNumber: e.SeriesNumber,
             SeriesDate: e.StudyDate,
             Modality: tt(d, tags::MODALITY)?,
         };

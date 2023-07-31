@@ -31,7 +31,7 @@ pub(crate) fn write_logs(
         load_json_carelessly(&patient_data_fname).unwrap_or_else(|| HashMap::with_capacity(1));
     patient_data
         .entry_ref(elements.PatientID)
-        .or_insert_with(|| PatientData::new(&dcm, &elements).unwrap()) // FIXME
+        .or_insert_with(|| PatientData::new(dcm, elements).unwrap())
         .StudyList
         .insert(elements.StudyInstanceUID.to_string());
     write_json(patient_data, patient_data_fname)?;
@@ -46,7 +46,7 @@ pub(crate) fn write_logs(
         let study_series_meta = StudyDataSeriesMeta::new(
             elements.SeriesInstanceUID.to_string(),
             unpack.dir.to_string(),
-            &dcm,
+            dcm,
         )?;
         let data: HashMap<_, _> = [(&elements.StudyInstanceUID, study_series_meta)].into();
         write_json(data, study_series_meta_fname)?;

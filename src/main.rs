@@ -1,3 +1,6 @@
+mod ndjson_log;
+
+use crate::ndjson_log::json_message;
 use camino::Utf8PathBuf;
 use clap::Parser;
 use rx_repack::repack;
@@ -42,8 +45,9 @@ struct Cli {
     #[clap(long)]
     verbosity: Option<u8>,
 
+    /// Write to stdout the outcome JSON
     #[clap(short, long, default_value_t = false)]
-    verbose: bool,
+    log_ndjson: bool,
 }
 
 fn main() -> anyhow::Result<()> {
@@ -54,10 +58,14 @@ fn main() -> anyhow::Result<()> {
         &args.datadir,
         args.logdir.as_ref().map(|p| p.as_path()),
         args.cleanup,
-    )?;
+    );
 
-    if args.verbose {
-        eprintln!("{} -> {}", dicom_file, &dst);
+    if args.log_ndjson {
+        // 12-factor app recommends writing to stdout (not stderr)
+        // https://12factor.net/logs
+        // NDJson is a best practice for logging:
+        // http://ndjson.org/
+        println!("{}", json_message(&dicom_file, dst)?);
     }
 
     anyhow::Ok(())

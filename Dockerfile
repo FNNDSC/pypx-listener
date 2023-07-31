@@ -22,4 +22,4 @@ COPY --from=builder /app/target/release/rx-repack /usr/local/bin/rx-repack
 
 EXPOSE 11113
 ENTRYPOINT ["/docker-entrypoint.sh"]
-CMD ["storescp", "--fork", "-od", "/tmp/storescp", "-pm", "-sp", "-xcr", "rx-repack --xcrdir '#p' --xcrfile '#f' --verbosity 0 --logdir /home/dicom/log --datadir /home/dicom/data --cleanup --verbose", "11113"]
+CMD ["storescp", "--fork", "-od", "/tmp/storescp", "-pm", "-sp", "-xcr", "rx-repack --xcrdir '#p' --xcrfile '#f' --verbosity 0 --logdir /home/dicom/log --datadir /home/dicom/data --cleanup --log-ndjson", "11113"]
