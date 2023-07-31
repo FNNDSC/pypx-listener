@@ -6,7 +6,7 @@ use crate::helpers::tt;
 use crate::pack_path::PypxPathElements;
 use dicom::core::header::Header;
 use dicom::core::value::{CastValueError, Value};
-use dicom::core::{DataDictionary, Tag};
+use dicom::core::{DataDictionary, Tag, VR};
 use dicom::dictionary_std::{tags, StandardDataDictionary};
 use dicom::object::mem::InMemElement;
 use dicom::object::DefaultDicomObject;
@@ -110,20 +110,59 @@ impl TryFrom<&InMemElement> for ValueAndLabel<'_> {
         if matches!(ele.value(), Value::PixelSequence { .. }) {
             return Err(DicomElementSerializationError::Excluded(tag));
         }
-        //
-        // if &label == "ReferencedImageSequence" {
-        //     dbg!(ele.value().to_multi_str().unwrap());
-        // }
-        //
 
-        // TODO serialize numbers and Item such as ReferencedImageSequence
-        let mut values = ele.to_multi_str()?.to_vec();
-        let value = if values.len() == 1 {
-            values.swap_remove(0)
+        let value = if INTEGER_VR.contains(&ele.vr()) {
+            // e.g. AcquisitionMatrix
+            serialize_loint(ele)
+        } else if ele.vr() == VR::DS {
+            // e.g. PixelSpacing, ImageOrientationPatient
+            serialize_lonum(ele)
         } else {
-            serde_json::to_string(&values)?
-        };
+            serialize_lostr(ele)
+        }?;
         Ok(Self { label, value })
+    }
+}
+
+const INTEGER_VR: [VR; 3] = [VR::US, VR::UL, VR::UV];
+
+fn serialize_loint(ele: &InMemElement) -> Result<String, DicomElementSerializationError> {
+    if let Ok(v) = ele.to_multi_int::<i64>() {
+        let s = serialize_first_or_as_list(v)?;
+        Ok(s)
+    } else {
+        let s = serialize_lostr(ele)?;
+        eprintln!("WARNING: Could not serialize {} as list of int", &s);
+        Ok(s)
+    }
+}
+
+fn serialize_lonum(ele: &InMemElement) -> Result<String, DicomElementSerializationError> {
+    if let Ok(v) = ele.to_multi_float64() {
+        let s = serialize_first_or_as_list(v)?;
+        Ok(s)
+    } else {
+        let s = serialize_lostr(ele)?;
+        eprintln!("WARNING: Could not serialize {} as list of float", &s);
+        Ok(s)
+    }
+}
+
+fn serialize_lostr(ele: &InMemElement) -> Result<String, DicomElementSerializationError> {
+    let mut values = ele.to_multi_str()?.to_vec();
+    let value = if values.len() == 1 {
+        values.swap_remove(0)
+    } else {
+        serde_json::to_string(&values)?
+    };
+    Ok(value)
+}
+
+fn serialize_first_or_as_list<T: Serialize>(v: Vec<T>) -> Result<String, serde_json::Error> {
+    if v.len() == 1 {
+        serde_json::to_string(&v[0])
+    } else {
+        serde_json::to_string(&v)
     }
 }
 
