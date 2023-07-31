@@ -48,7 +48,7 @@ pub(crate) fn write_logs(
             unpack.dir.to_string(),
             &dcm,
         )?;
-        let data: HashMap<_, _> = [(elements.StudyInstanceUID, study_series_meta)].into();
+        let data: HashMap<_, _> = [(&elements.StudyInstanceUID, study_series_meta)].into();
         write_json(data, study_series_meta_fname)?;
     }
 

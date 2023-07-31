@@ -64,7 +64,7 @@ impl<'a> StudyDataMeta<'a> {
             PatientID: e.PatientID,
             StudyDescription: e.StudyDescription,
             StudyDate: e.StudyDate,
-            StudyInstanceUID: e.StudyInstanceUID,
+            StudyInstanceUID: &e.StudyInstanceUID,
             PerformedStationAETitle: tt(&d, tags::PERFORMED_STATION_AE_TITLE).unwrap_or(""),
         };
         Ok(data)
@@ -195,8 +195,8 @@ impl<'a> SeriesDataMeta<'a> {
     ) -> Result<Self, DicomTagReadError> {
         let data = Self {
             PatientID: e.PatientID,
-            StudyInstanceUID: e.StudyInstanceUID,
-            SeriesInstanceUID: e.SeriesInstanceUID,
+            StudyInstanceUID: &e.StudyInstanceUID,
+            SeriesInstanceUID: &e.SeriesInstanceUID,
             SeriesDescription: e.SeriesDescription,
             SeriesNumber: e.SeriesNumber.clone(),
             SeriesDate: e.StudyDate,

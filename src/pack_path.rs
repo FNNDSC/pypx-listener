@@ -1,12 +1,9 @@
 //! Functions for deciding where to copy the received DICOM to.
 use crate::errors::DicomTagReadError;
-use crate::helpers::tt;
+use crate::helpers::{sanitize, tt, tts};
 use camino::{Utf8Path, Utf8PathBuf};
 use dicom::dictionary_std::tags;
 use dicom::object::DefaultDicomObject;
-use regex::Regex;
-
-use std::sync::OnceLock;
 
 /// Destination directory and file name for the DICOM file.
 pub(crate) struct PypxPath {
@@ -63,8 +60,8 @@ pub(crate) struct PypxPathElements<'a> {
     pub SeriesDescription: &'a str,
 
     // these are not part of the path name, but used in the log path names.
-    pub StudyInstanceUID: &'a str,
-    pub SeriesInstanceUID: &'a str,
+    pub StudyInstanceUID: String,
+    pub SeriesInstanceUID: String,
 }
 
 impl<'a> TryFrom<&'a DefaultDicomObject> for PypxPathElements<'a> {
@@ -84,23 +81,9 @@ impl<'a> TryFrom<&'a DefaultDicomObject> for PypxPathElements<'a> {
             StudyDate: tt(&dcm, tags::STUDY_DATE)?,
             SeriesNumber: tt(&dcm, tags::SERIES_NUMBER)?.parse()?,
             SeriesDescription: tt(&dcm, tags::SERIES_DESCRIPTION)?,
-            StudyInstanceUID: tt(&dcm, tags::STUDY_INSTANCE_UID)?,
-            SeriesInstanceUID: tt(&dcm, tags::SERIES_INSTANCE_UID)?,
+            StudyInstanceUID: tts(&dcm, tags::STUDY_INSTANCE_UID)?,
+            SeriesInstanceUID: tts(&dcm, tags::SERIES_INSTANCE_UID)?,
         };
         Ok(data)
     }
 }
-
-/// Replace disallowed characters with "_".
-/// https://github.com/FNNDSC/pypx/blob/7619c15f4d2303d6d5ca7c255d81d06c7ab8682b/pypx/repack.py#L424
-///
-/// Also, it's necessary to handle NUL bytes...
-fn sanitize<S: AsRef<str>>(s: S) -> String {
-    let s_nonull = s.as_ref().replace('\0', "");
-    VALID_CHARS_RE
-        .get_or_init(|| Regex::new(r#"[^A-Za-z0-9\.\-]+"#).unwrap())
-        .replace_all(&s_nonull, "_")
-        .to_string()
-}
-
-static VALID_CHARS_RE: OnceLock<Regex> = OnceLock::new();
