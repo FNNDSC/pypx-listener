@@ -117,7 +117,7 @@ impl TryFrom<&InMemElement> for ValueAndLabel {
         // }
         //
 
-        /// TODO serialize numbers and Item such as ReferencedImageSequence
+        // TODO serialize numbers and Item such as ReferencedImageSequence
         let mut values = ele.to_multi_str()?.to_vec();
         let value = if values.len() == 1 {
             values.swap_remove(0)

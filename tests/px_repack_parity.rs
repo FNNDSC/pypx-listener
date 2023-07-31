@@ -44,7 +44,7 @@ fn test_parity_with_px_repack() -> anyhow::Result<()> {
     }
 
     // assert all files present, w/o checking their contents (for now)
-    for (expected_file, actual_file) in file_by_file(&expected_log_dir, &actual_log_dir) {
+    for (_expected_file, actual_file) in file_by_file(&expected_log_dir, &actual_log_dir) {
         assert!(
             actual_file.is_file(),
             "{} is not a file. Parent has files: {:?}",

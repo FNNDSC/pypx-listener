@@ -3,16 +3,15 @@ use crate::errors::DicomTagReadError;
 use crate::helpers::tt;
 use camino::{Utf8Path, Utf8PathBuf};
 use dicom::dictionary_std::tags;
-use dicom::object::{DefaultDicomObject, Tag};
+use dicom::object::DefaultDicomObject;
 use regex::Regex;
-use std::borrow::Cow;
+
 use std::sync::OnceLock;
 
 /// Destination directory and file name for the DICOM file.
 pub(crate) struct PypxPath {
     pub path: Utf8PathBuf,
     pub dir: Utf8PathBuf,
-    pub dir_rel: Utf8PathBuf,
     pub fname: String,
 }
 
@@ -42,7 +41,6 @@ impl PypxPath {
         let path = pack_dir.join(&fname);
         Self {
             fname,
-            dir_rel: pack_dir_rel,
             dir: pack_dir,
             path,
         }

@@ -1,7 +1,7 @@
 use crate::log_write::write_logs;
 use crate::pack_path::PypxPath;
 use camino::{Utf8Path, Utf8PathBuf};
-use dicom::core::header::Header;
+
 use std::path::Path;
 
 pub fn repack(
