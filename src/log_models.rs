@@ -56,12 +56,12 @@ pub(crate) struct StudyDataMeta<'a> {
 }
 
 impl<'a> StudyDataMeta<'a> {
-    pub fn new(d: &'a DefaultDicomObject, e: &'a PypxPathElements, StudyInstanceUID: &'a str) -> Result<Self, DicomTagReadError> {
+    pub fn new(d: &'a DefaultDicomObject, e: &'a PypxPathElements) -> Result<Self, DicomTagReadError> {
         let data = Self {
             PatientID: e.PatientID,
             StudyDescription: e.StudyDescription,
             StudyDate: e.StudyDate,
-            StudyInstanceUID,
+            StudyInstanceUID: e.StudyInstanceUID,
             PerformedStationAETitle: tt(&d, tags::PERFORMED_STATION_AE_TITLE).unwrap_or(""),
         };
         Ok(data)
@@ -151,11 +151,11 @@ pub(crate) struct SeriesDataMeta<'a> {
 }
 
 impl<'a> SeriesDataMeta<'a> {
-    pub fn new(d: &'a DefaultDicomObject, e: &'a PypxPathElements, StudyInstanceUID: &'a str, SeriesInstanceUID: &'a str) -> Result<Self, DicomTagReadError> {
+    pub fn new(d: &'a DefaultDicomObject, e: &'a PypxPathElements) -> Result<Self, DicomTagReadError> {
         let data = Self {
             PatientID: e.PatientID,
-            StudyInstanceUID,
-            SeriesInstanceUID,
+            StudyInstanceUID: e.StudyInstanceUID,
+            SeriesInstanceUID: e.SeriesInstanceUID,
             SeriesDescription: e.SeriesDescription,
             SeriesNumber: e.SeriesNumber.clone(),
             SeriesDate: e.StudyDate,

@@ -52,6 +52,8 @@ impl PypxPath {
 /// DICOM elements which a [PypxPath] is comprised of.
 #[allow(non_snake_case)]
 pub(crate) struct PypxPathElements<'a> {
+
+    // these are all part of the path name.
     pub InstanceNumber: &'a str,
     pub SOPInstanceUID: &'a str,
     pub PatientID: &'a str,
@@ -62,6 +64,10 @@ pub(crate) struct PypxPathElements<'a> {
     pub StudyDate: &'a str,
     pub SeriesNumber: u32,
     pub SeriesDescription: &'a str,
+
+    // these are not part of the path name, but used in the log path names.
+    pub StudyInstanceUID: &'a str,
+    pub SeriesInstanceUID: &'a str,
 }
 
 impl<'a> TryFrom<&'a DefaultDicomObject> for PypxPathElements<'a> {
@@ -81,6 +87,8 @@ impl<'a> TryFrom<&'a DefaultDicomObject> for PypxPathElements<'a> {
             StudyDate: tt(&dcm, tags::STUDY_DATE)?,
             SeriesNumber: tt(&dcm, tags::SERIES_NUMBER)?.parse()?,
             SeriesDescription: tt(&dcm, tags::SERIES_DESCRIPTION)?,
+            StudyInstanceUID: tt(&dcm, tags::STUDY_INSTANCE_UID)?,
+            SeriesInstanceUID: tt(&dcm, tags::SERIES_INSTANCE_UID)?,
         };
         Ok(data)
     }
