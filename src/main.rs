@@ -26,30 +26,39 @@ struct Cli {
     #[clap(long)]
     xcrfile: Utf8PathBuf,
 
-    /// output directory
+    /// Output directory for DICOM files
     #[clap(long)]
     datadir: Utf8PathBuf,
+
+    /// Output directory for pypx DICOM tag data JSON files
+    #[clap(long)]
+    logdir: Option<Utf8PathBuf>,
 
     /// Remove DICOM file from source location
     #[clap(long, default_value_t = false)]
     cleanup: bool,
 
-    /// NOT IMPLEMENTED
-    #[clap(long)]
-    logdir: Option<Utf8PathBuf>,
-
     /// Deprecated option
     #[clap(long)]
     verbosity: Option<u8>,
+
+    #[clap(short, long, default_value_t = false)]
+    verbose: bool,
 }
 
 fn main() -> anyhow::Result<()> {
     let args: Cli = Cli::parse();
     let dicom_file = args.xcrdir.join(&args.xcrfile);
-    repack(
+    let dst = repack(
         &dicom_file,
         &args.datadir,
         args.logdir.as_ref().map(|p| p.as_path()),
         args.cleanup,
-    )
+    )?;
+
+    if args.verbose {
+        eprintln!("{} -> {}", dicom_file, &dst);
+    }
+
+    anyhow::Ok(())
 }

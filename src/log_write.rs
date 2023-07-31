@@ -38,15 +38,17 @@ pub(crate) fn write_logs(
     write_json(patient_data, patient_data_fname)?;
 
     // write stuff to studyData/X.X.X.XXXXX-series/Y.Y.Y.YYYYY-meta.json
-    let study_series_meta_dir = study_data_dir.join(format!("{}-series", &elements.StudyInstanceUID));
+    let study_series_meta_dir =
+        study_data_dir.join(format!("{}-series", &elements.StudyInstanceUID));
     fs_err::create_dir_all(&study_series_meta_dir)?;
-    let study_series_meta_fname = study_series_meta_dir.join(format!(
-        "{}-meta.json",
-        &elements.SeriesInstanceUID
-    ));
+    let study_series_meta_fname =
+        study_series_meta_dir.join(format!("{}-meta.json", &elements.SeriesInstanceUID));
     if !study_series_meta_fname.is_file() {
-        let study_series_meta =
-            StudyDataSeriesMeta::new(elements.SeriesInstanceUID.to_string(), unpack.dir.to_string(), &dcm)?;
+        let study_series_meta = StudyDataSeriesMeta::new(
+            elements.SeriesInstanceUID.to_string(),
+            unpack.dir.to_string(),
+            &dcm,
+        )?;
         let data: HashMap<_, _> = [(elements.StudyInstanceUID, study_series_meta)].into();
         write_json(data, study_series_meta_fname)?;
     }
@@ -59,12 +61,12 @@ pub(crate) fn write_logs(
     }
 
     // write stuff to seriesData/Y.Y.Y.YYYYY-meta.json
-    let series_meta_fname = series_data_dir.join(format!("{}-meta.json", &elements.SeriesInstanceUID));
+    let series_meta_fname =
+        series_data_dir.join(format!("{}-meta.json", &elements.SeriesInstanceUID));
     if !series_meta_fname.is_file() {
         let series_meta_data = SeriesDataMeta::new(dcm, elements)?;
         write_json(series_meta_data, series_meta_fname)?;
     }
-
 
     // write stuff to seriesData/Y.Y.Y.YYYYY-pack.json
     let pack_fname = series_data_dir.join(format!("{}-pack.json", &elements.SeriesInstanceUID));
@@ -105,4 +107,3 @@ fn write_json<S: Serialize, P: AsRef<Utf8Path>>(data: S, p: P) -> io::Result<()>
     serde_json::to_writer_pretty(writer, &data).unwrap();
     Ok(())
 }
-

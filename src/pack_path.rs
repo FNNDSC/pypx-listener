@@ -52,7 +52,6 @@ impl PypxPath {
 /// DICOM elements which a [PypxPath] is comprised of.
 #[allow(non_snake_case)]
 pub(crate) struct PypxPathElements<'a> {
-
     // these are all part of the path name.
     pub InstanceNumber: &'a str,
     pub SOPInstanceUID: &'a str,

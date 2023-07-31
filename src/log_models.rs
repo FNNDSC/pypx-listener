@@ -6,10 +6,10 @@ use crate::helpers::tt;
 use crate::pack_path::PypxPathElements;
 use dicom::core::header::Header;
 use dicom::core::value::{CastValueError, Value};
-use dicom::core::{DataDictionary, Tag, VR};
+use dicom::core::{DataDictionary, Tag};
 use dicom::dictionary_std::{tags, StandardDataDictionary};
-use dicom::object::mem::{InMemElement, InMemFragment};
-use dicom::object::{DefaultDicomObject, InMemDicomObject};
+use dicom::object::mem::InMemElement;
+use dicom::object::DefaultDicomObject;
 use hashbrown::{HashMap, HashSet};
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
@@ -56,7 +56,10 @@ pub(crate) struct StudyDataMeta<'a> {
 }
 
 impl<'a> StudyDataMeta<'a> {
-    pub fn new(d: &'a DefaultDicomObject, e: &'a PypxPathElements) -> Result<Self, DicomTagReadError> {
+    pub fn new(
+        d: &'a DefaultDicomObject,
+        e: &'a PypxPathElements,
+    ) -> Result<Self, DicomTagReadError> {
         let data = Self {
             PatientID: e.PatientID,
             StudyDescription: e.StudyDescription,
@@ -67,9 +70,6 @@ impl<'a> StudyDataMeta<'a> {
         Ok(data)
     }
 }
-
-
-
 
 #[derive(Debug, Serialize)]
 pub(crate) struct StudyDataSeriesMeta {
@@ -151,7 +151,10 @@ pub(crate) struct SeriesDataMeta<'a> {
 }
 
 impl<'a> SeriesDataMeta<'a> {
-    pub fn new(d: &'a DefaultDicomObject, e: &'a PypxPathElements) -> Result<Self, DicomTagReadError> {
+    pub fn new(
+        d: &'a DefaultDicomObject,
+        e: &'a PypxPathElements,
+    ) -> Result<Self, DicomTagReadError> {
         let data = Self {
             PatientID: e.PatientID,
             StudyInstanceUID: e.StudyInstanceUID,
@@ -181,8 +184,15 @@ pub(crate) struct InstanceData<'a> {
 }
 
 impl<'a> InstanceData<'a> {
-    pub fn new(d: &'a DefaultDicomObject, e: &'a PypxPathElements, outputFile: &'a str, FSlocation: String) -> Result<Self, DicomTagReadError> {
-        let imageObj = [(outputFile.to_string(), FileStat { FSlocation })].into_iter().collect();
+    pub fn new(
+        d: &'a DefaultDicomObject,
+        e: &'a PypxPathElements,
+        outputFile: &'a str,
+        FSlocation: String,
+    ) -> Result<Self, DicomTagReadError> {
+        let imageObj = [(outputFile.to_string(), FileStat { FSlocation })]
+            .into_iter()
+            .collect();
         let data = Self {
             PatientID: e.PatientID,
             StudyInstanceUID: tt(d, tags::STUDY_INSTANCE_UID)?,
@@ -192,13 +202,11 @@ impl<'a> InstanceData<'a> {
             SeriesDate: tt(d, tags::SERIES_DATE)?,
             Modality: tt(d, tags::MODALITY)?,
             outputFile,
-            imageObj
+            imageObj,
         };
         Ok(data)
     }
 }
-
-
 
 /// File's stat metadata.
 /// Not complete.
@@ -208,7 +216,6 @@ struct FileStat {
     /// Important! Checked by smdb.py to count how many files are packed so far.
     FSlocation: String,
 }
-
 
 #[derive(Debug, Serialize)]
 pub(crate) struct SeriesPack {

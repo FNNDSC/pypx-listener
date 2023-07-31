@@ -72,6 +72,7 @@ fn process_all(od_dir: &Utf8Path, data_dir: &Utf8Path, log_dir: &Utf8Path) -> an
         .map(Utf8PathBuf::from_path_buf)
         .map(Result::unwrap)
         .map(|dicom_file| (repack(&dicom_file, data_dir, Some(log_dir), false)))
+        .map(|e| e.map(|_| ())) // discard return values
         .collect()
 }
 
