@@ -6,7 +6,7 @@ pub(crate) enum DicomTagReadError {
     #[error(transparent)]
     ParseIntError(#[from] ParseIntError),
     #[error(transparent)]
-    NotFound(#[from] dicom::object::Error),
+    Access(#[from] dicom::object::AccessError),
     #[error("{tag:?} tag value is not a string")]
     NotString {
         #[source]
