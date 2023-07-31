@@ -72,17 +72,17 @@ impl<'a> StudyDataMeta<'a> {
 }
 
 #[derive(Debug, Serialize)]
-pub(crate) struct StudyDataSeriesMeta {
+pub(crate) struct StudyDataSeriesMeta<'a> {
     SeriesInstanceUID: String,
     SeriesBaseDir: String,
-    DICOM: HashMap<String, ValueAndLabel>,
+    DICOM: HashMap<String, ValueAndLabel<'a>>,
 }
 
-impl StudyDataSeriesMeta {
+impl<'a> StudyDataSeriesMeta<'a> {
     pub fn new(
         SeriesInstanceUID: String,
         SeriesBaseDir: String,
-        dcm: &DefaultDicomObject,
+        dcm: &'a DefaultDicomObject,
     ) -> Result<StudyDataSeriesMeta, CastValueError> {
         let DICOM = dcm
             .iter()
@@ -98,16 +98,15 @@ impl StudyDataSeriesMeta {
     }
 }
 
-impl TryFrom<&InMemElement> for ValueAndLabel {
+impl TryFrom<&InMemElement> for ValueAndLabel<'_> {
     type Error = DicomElementSerializationError;
     fn try_from(ele: &InMemElement) -> Result<Self, Self::Error> {
         let tag = ele.tag();
         if tag == tags::PIXEL_DATA {
             return Err(DicomElementSerializationError::Excluded(tag));
         }
-        let label = name_of(tag)
-            .ok_or_else(|| DicomElementSerializationError::UnknownTagError(tag))?
-            .to_string();
+        let label =
+            name_of(tag).ok_or_else(|| DicomElementSerializationError::UnknownTagError(tag))?;
         if matches!(ele.value(), Value::PixelSequence { .. }) {
             return Err(DicomElementSerializationError::Excluded(tag));
         }
@@ -134,9 +133,9 @@ fn name_of(tag: Tag) -> Option<&'static str> {
 }
 
 #[derive(Debug, Serialize)]
-struct ValueAndLabel {
+struct ValueAndLabel<'a> {
     value: String,
-    label: String,
+    label: &'a str,
 }
 
 #[derive(Debug, Serialize)]
