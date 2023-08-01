@@ -1,11 +1,14 @@
+use crate::dicom_data::DicomTagError;
 use camino::{Utf8Path, Utf8PathBuf};
+use dicom::object::Tag;
+use hashbrown::HashMap;
 use serde::Serialize;
 use std::os::unix::fs::MetadataExt;
 
 /// Produce a JSON string which describes the outcome of `rx-repack`.
-pub(crate) fn json_message(
+pub fn json_message(
     src: &Utf8Path,
-    result: anyhow::Result<Utf8PathBuf>,
+    result: &anyhow::Result<(Utf8PathBuf, HashMap<Tag, DicomTagError>)>,
 ) -> anyhow::Result<String> {
     let msg = Message::new(src, result);
     serde_json::to_string(&msg).map_err(anyhow::Error::from)
@@ -14,7 +17,7 @@ pub(crate) fn json_message(
 #[derive(Serialize, Debug)]
 struct Message<'a> {
     src: &'a Utf8Path,
-    dst: Option<Utf8PathBuf>,
+    dst: Option<&'a Utf8Path>,
     #[serde(skip_serializing_if = "Option::is_none")]
     size: Option<u64>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -22,10 +25,15 @@ struct Message<'a> {
 }
 
 impl<'a> Message<'a> {
-    fn new(src: &'a Utf8Path, result: anyhow::Result<Utf8PathBuf>) -> Self {
+    fn new(
+        src: &'a Utf8Path,
+        result: &'a anyhow::Result<(Utf8PathBuf, HashMap<Tag, DicomTagError>)>,
+    ) -> Self {
         result
-            .and_then(|dst| {
-                fs_err::metadata(&dst)
+            .as_ref()
+            .map_err(|e| anyhow::Error::msg(e.to_string())) // FIXME
+            .and_then(|(dst, _warnings)| {
+                fs_err::metadata(dst)
                     .map(|m| (dst, m.size()))
                     .map_err(anyhow::Error::from)
             })
