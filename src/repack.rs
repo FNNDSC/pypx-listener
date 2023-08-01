@@ -2,9 +2,7 @@ use crate::log_write::write_logs;
 use crate::pack_path::PypxPath;
 use camino::{Utf8Path, Utf8PathBuf};
 
-use crate::dicom_data::DicomTagError;
-use dicom::object::Tag;
-use hashbrown::HashMap;
+use crate::dicom_data::DicomTagAndError;
 use std::path::Path;
 
 pub fn repack(
@@ -12,7 +10,7 @@ pub fn repack(
     data_dir: &Utf8Path,
     log_dir: Option<&Utf8Path>,
     cleanup: bool,
-) -> anyhow::Result<(Utf8PathBuf, HashMap<Tag, DicomTagError>)> {
+) -> anyhow::Result<(Utf8PathBuf, Vec<DicomTagAndError>)> {
     let dcm = dicom::object::open_file(dicom_file)?;
     let common = (&dcm).try_into()?;
     let unpack = PypxPath::new(&common, data_dir);
@@ -24,7 +22,7 @@ pub fn repack(
         let warnings = write_logs(&dcm, &common, &unpack, d)?;
         anyhow::Ok((unpack.path, warnings))
     } else {
-        anyhow::Ok((unpack.path, HashMap::new()))
+        anyhow::Ok((unpack.path, Vec::new()))
     }
 }
 

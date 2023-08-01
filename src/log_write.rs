@@ -2,7 +2,7 @@ use crate::log_models::*;
 use crate::pack_path::PypxPath;
 use camino::Utf8Path;
 
-use crate::dicom_data::{CommonElements, DicomTagError, TagExtractor};
+use crate::dicom_data::{CommonElements, DicomTagAndError, DicomTagError, TagExtractor};
 use dicom::object::{DefaultDicomObject, Tag};
 use hashbrown::HashMap;
 use serde::de::DeserializeOwned;
@@ -19,7 +19,7 @@ pub(crate) fn write_logs(
     common: &CommonElements,
     unpack: &PypxPath,
     log_dir: &Utf8Path,
-) -> anyhow::Result<HashMap<Tag, DicomTagError>> {
+) -> anyhow::Result<Vec<DicomTagAndError>> {
     let d = TagExtractor::new(dcm);
     let patient_data_dir = log_dir.join("patientData");
     let series_data_dir = log_dir.join("seriesData");

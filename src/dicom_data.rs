@@ -2,7 +2,7 @@ use dicom::core::value::{CastValueError, ConvertValueError};
 use dicom::core::DataDictionary;
 use dicom::dictionary_std::{tags, StandardDataDictionary};
 use dicom::object::{DefaultDicomObject, Tag};
-use hashbrown::HashMap;
+use serde::Serialize;
 use std::borrow::Cow;
 use std::cell::RefCell;
 
@@ -12,7 +12,12 @@ use std::cell::RefCell;
 /// some default value is returned instead, and the error is recorded in `errors`.
 pub(crate) struct TagExtractor<'a> {
     pub dcm: &'a DefaultDicomObject,
-    pub errors: RefCell<HashMap<Tag, DicomTagError>>,
+    pub errors: RefCell<Vec<DicomTagAndError>>,
+}
+
+pub struct DicomTagAndError {
+    pub tag: Tag,
+    pub error: DicomTagError,
 }
 
 /// Error reading a DICOM tag's value.
@@ -52,7 +57,7 @@ impl<'a> TagExtractor<'a> {
     pub fn new(dcm: &'a DefaultDicomObject) -> Self {
         Self {
             dcm,
-            errors: RefCell::new(HashMap::new()),
+            errors: RefCell::new(Vec::new()),
         }
     }
 
@@ -61,8 +66,9 @@ impl<'a> TagExtractor<'a> {
             .element(tag)
             .map_err(DicomTagError::from)
             .and_then(|ele| ele.to_str().map_err(DicomTagError::from))
-            .unwrap_or_else(|e| {
-                self.errors.borrow_mut().insert(tag, e);
+            .unwrap_or_else(|error| {
+                let e = DicomTagAndError { tag, error };
+                self.errors.borrow_mut().push(e);
                 "".into()
             })
     }
