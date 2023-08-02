@@ -1,7 +1,13 @@
 //! Models of what gets written to `/home/dicom/log`.
 #![allow(non_snake_case)]
-use crate::dicom_data::{CommonElements, TagExtractor};
+use crate::dicom_data::{name_of, CommonElements, TagExtractor};
+use crate::errors::ElementSerializationError;
+use dicom::core::header::Header;
+use dicom::core::value::{DataSetSequence, DicomValueType, Value, ValueType};
+use dicom::core::PrimitiveValue;
 use dicom::dictionary_std::tags;
+use dicom::object::mem::InMemElement;
+use dicom::object::{DefaultDicomObject, InMemDicomObject};
 use hashbrown::{HashMap, HashSet};
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
@@ -57,61 +63,7 @@ impl<'a> PatientData<'a> {
 //     }
 // }
 //
-// #[derive(Debug, Serialize)]
-// pub(crate) struct StudyDataSeriesMeta<'a> {
-//     SeriesInstanceUID: String,
-//     SeriesBaseDir: String,
-//     DICOM: HashMap<String, ValueAndLabel<'a>>,
-// }
-//
-// impl<'a> StudyDataSeriesMeta<'a> {
-//     pub fn new(
-//         SeriesInstanceUID: String,
-//         SeriesBaseDir: String,
-//         dcm: &'a DefaultDicomObject,
-//     ) -> Result<StudyDataSeriesMeta, CastValueError> {
-//         let DICOM = dcm
-//             .iter()
-//             .map(ValueAndLabel::try_from)
-//             .filter_map(|r| r.ok())
-//             .map(|v| (v.label.to_string(), v))
-//             .collect::<HashMap<String, ValueAndLabel>>();
-//         Ok(Self {
-//             SeriesInstanceUID,
-//             SeriesBaseDir,
-//             DICOM,
-//         })
-//     }
-// }
-//
-// impl TryFrom<&InMemElement> for ValueAndLabel<'_> {
-//     type Error = DicomElementSerializationError;
-//     fn try_from(ele: &InMemElement) -> Result<Self, Self::Error> {
-//         let tag = ele.tag();
-//         if tag == tags::PIXEL_DATA {
-//             return Err(DicomElementSerializationError::Excluded(tag));
-//         }
-//         let label =
-//             name_of(tag).ok_or_else(|| DicomElementSerializationError::UnknownTagError(tag))?;
-//         if matches!(ele.value(), Value::PixelSequence { .. }) {
-//             return Err(DicomElementSerializationError::Excluded(tag));
-//         }
-//
-//         let value = if INTEGER_VR.contains(&ele.vr()) {
-//             // e.g. AcquisitionMatrix
-//             serialize_loint(ele)
-//         } else if ele.vr() == VR::DS {
-//             // e.g. PixelSpacing, ImageOrientationPatient
-//             serialize_lonum(ele)
-//         } else {
-//             serialize_lostr(ele)
-//         }?;
-//         Ok(Self { label, value })
-//     }
-// }
-//
-// const INTEGER_VR: [VR; 3] = [VR::US, VR::UL, VR::UV];
-//
+
 // fn serialize_loint(ele: &InMemElement) -> Result<String, DicomElementSerializationError> {
 //     if let Ok(v) = ele.to_multi_int::<i64>() {
 //         let s = serialize_first_or_as_list(v)?;
@@ -152,11 +104,7 @@ impl<'a> PatientData<'a> {
 //     }
 // }
 //
-// #[derive(Debug, Serialize)]
-// struct ValueAndLabel<'a> {
-//     value: String,
-//     label: &'a str,
-// }
+
 //
 // #[derive(Debug, Serialize)]
 // pub(crate) struct SeriesDataMeta<'a> {

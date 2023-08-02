@@ -1,6 +1,6 @@
 /// Error decoding a DICOM tag's value.
 #[derive(thiserror::Error, Debug)]
-pub(crate) enum DicomElementSerializationError {
+pub(crate) enum ElementSerializationError {
     #[error("Unknown tag: {0}")]
     UnknownTagError(dicom::core::Tag),
     #[error("{0} should not be serialized.")]

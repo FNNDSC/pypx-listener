@@ -2,8 +2,9 @@ use crate::log_models::*;
 use crate::pack_path::PypxPath;
 use camino::Utf8Path;
 
-use crate::dicom_data::{CommonElements, DicomTagAndError, DicomTagError, TagExtractor};
-use dicom::object::{DefaultDicomObject, Tag};
+use crate::dicom_data::{CommonElements, DicomTagAndError, TagExtractor};
+use crate::serialize_seriesmeta::StudyDataSeriesMeta;
+use dicom::object::DefaultDicomObject;
 use hashbrown::HashMap;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
@@ -20,7 +21,7 @@ pub(crate) fn write_logs(
     unpack: &PypxPath,
     log_dir: &Utf8Path,
 ) -> anyhow::Result<Vec<DicomTagAndError>> {
-    let d = TagExtractor::new(dcm);
+    let dcmtags = TagExtractor::new(dcm);
     let patient_data_dir = log_dir.join("patientData");
     let series_data_dir = log_dir.join("seriesData");
     let study_data_dir = log_dir.join("studyData");
@@ -33,26 +34,22 @@ pub(crate) fn write_logs(
         load_json_carelessly(&patient_data_fname).unwrap_or_else(|| HashMap::with_capacity(1));
     patient_data
         .entry_ref(common.PatientID)
-        .or_insert_with(|| PatientData::new(&d, common))
+        .or_insert_with(|| PatientData::new(&dcmtags, common))
         .StudyList
         .insert(common.StudyInstanceUID.to_string());
     write_json(patient_data, patient_data_fname)?;
-    //
-    // // write stuff to studyData/X.X.X.XXXXX-series/Y.Y.Y.YYYYY-meta.json
-    // let study_series_meta_dir =
-    //     study_data_dir.join(format!("{}-series", &elements.StudyInstanceUID));
-    // fs_err::create_dir_all(&study_series_meta_dir)?;
-    // let study_series_meta_fname =
-    //     study_series_meta_dir.join(format!("{}-meta.json", &elements.SeriesInstanceUID));
-    // if !study_series_meta_fname.is_file() {
-    //     let study_series_meta = StudyDataSeriesMeta::new(
-    //         elements.SeriesInstanceUID.to_string(),
-    //         unpack.dir.to_string(),
-    //         dcm,
-    //     )?;
-    //     let data: HashMap<_, _> = [(&elements.StudyInstanceUID, study_series_meta)].into();
-    //     write_json(data, study_series_meta_fname)?;
-    // }
+
+    // write stuff to studyData/X.X.X.XXXXX-series/Y.Y.Y.YYYYY-meta.json
+    let study_series_meta_dir = study_data_dir.join(format!("{}-series", &common.StudyInstanceUID));
+    fs_err::create_dir_all(&study_series_meta_dir)?;
+    let study_series_meta_fname =
+        study_series_meta_dir.join(format!("{}-meta.json", &common.SeriesInstanceUID));
+    if !study_series_meta_fname.is_file() {
+        let study_series_meta =
+            StudyDataSeriesMeta::new(&common.SeriesInstanceUID, &unpack.dir.as_str(), dcm);
+        let data: HashMap<_, _> = [(&common.StudyInstanceUID, study_series_meta)].into();
+        write_json(data, study_series_meta_fname)?;
+    }
     //
     // // write stuff to studyData/X.X.X.XXXXX-meta.json
     // let study_meta_fname = study_data_dir.join(format!("{}-meta.json", &elements.StudyInstanceUID));
@@ -83,7 +80,7 @@ pub(crate) fn write_logs(
     // let data: HashMap<_, _> = [(&elements.SeriesInstanceUID, img_data)].into();
     // write_json(data, img_data_fname)?;
 
-    Ok(d.errors.into_inner())
+    Ok(dcmtags.errors.into_inner())
 }
 
 /// Read and deserialize a JSON file. In case of any error, return `None`.

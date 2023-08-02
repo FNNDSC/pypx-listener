@@ -932,6 +932,7 @@ dependencies = [
  "fs-err",
  "glob",
  "hashbrown",
+ "itertools",
  "pathdiff",
  "regex",
  "serde",
