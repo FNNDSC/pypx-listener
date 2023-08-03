@@ -2,6 +2,7 @@ use crate::log_write::write_logs;
 use crate::pack_path::PypxPath;
 use camino::{Utf8Path, Utf8PathBuf};
 
+use crate::dicom_data::DicomTagAndError;
 use std::path::Path;
 
 pub fn repack(
@@ -9,19 +10,35 @@ pub fn repack(
     data_dir: &Utf8Path,
     log_dir: Option<&Utf8Path>,
     cleanup: bool,
-) -> anyhow::Result<Utf8PathBuf> {
+) -> anyhow::Result<RepackOutcome> {
     let dcm = dicom::object::open_file(dicom_file)?;
-    let elements = (&dcm).try_into()?;
-    let unpack = PypxPath::new(&elements, data_dir);
+    let common = (&dcm).try_into()?;
+    let unpack = PypxPath::new(&common, data_dir);
 
     fs_err::create_dir_all(&unpack.dir)?;
     copy_or_mv(dicom_file, &unpack.path, cleanup)?;
 
-    if let Some(d) = log_dir {
-        write_logs(&dcm, &elements, &unpack, d)?;
-    }
+    let missing = if let Some(d) = log_dir {
+        write_logs(&dcm, &common, &unpack, d)?
+    } else {
+        Vec::new()
+    };
+    let outcome = RepackOutcome {
+        dst: unpack.path,
+        missing,
+        PatientID: common.PatientID.to_string(),
+        SeriesInstanceUID: common.SeriesInstanceUID,
+    };
+    anyhow::Ok(outcome)
+}
 
-    anyhow::Ok(unpack.path)
+/// Information about what the function [repack] did, for logging purposes.
+#[allow(non_snake_case)]
+pub struct RepackOutcome {
+    pub dst: Utf8PathBuf,
+    pub missing: Vec<DicomTagAndError>,
+    pub PatientID: String,
+    pub SeriesInstanceUID: String,
 }
 
 fn copy_or_mv<P: AsRef<Path>, Q: AsRef<Path>>(

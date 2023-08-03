@@ -1,23 +1,6 @@
-use std::num::ParseIntError;
-
-/// Error reading a DICOM tag's value.
-#[derive(thiserror::Error, Debug)]
-pub(crate) enum DicomTagReadError {
-    #[error(transparent)]
-    ParseIntError(#[from] ParseIntError),
-    #[error(transparent)]
-    Access(#[from] dicom::object::AccessError),
-    #[error("{tag:?} tag value is not a string")]
-    NotString {
-        #[source]
-        error: dicom::core::value::CastValueError,
-        tag: dicom::core::Tag,
-    },
-}
-
 /// Error decoding a DICOM tag's value.
 #[derive(thiserror::Error, Debug)]
-pub(crate) enum DicomElementSerializationError {
+pub(crate) enum ElementSerializationError {
     #[error("Unknown tag: {0}")]
     UnknownTagError(dicom::core::Tag),
     #[error("{0} should not be serialized.")]

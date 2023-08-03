@@ -1,9 +1,6 @@
-mod ndjson_log;
-
-use crate::ndjson_log::json_message;
 use camino::Utf8PathBuf;
 use clap::Parser;
-use rx_repack::repack;
+use rx_repack::{json_message, repack};
 
 #[derive(clap::Parser)]
 #[clap(
@@ -65,7 +62,7 @@ fn main() -> anyhow::Result<()> {
         // https://12factor.net/logs
         // NDJson is a best practice for logging:
         // http://ndjson.org/
-        println!("{}", json_message(&dicom_file, dst)?);
+        println!("{}", json_message(&dicom_file, &dst)?);
     }
 
     anyhow::Ok(())
