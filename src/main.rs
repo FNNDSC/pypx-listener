@@ -50,7 +50,7 @@ struct Cli {
 fn main() -> anyhow::Result<()> {
     let args: Cli = Cli::parse();
     let dicom_file = args.xcrdir.join(&args.xcrfile);
-    let dst = repack(
+    let outcome = repack(
         &dicom_file,
         &args.datadir,
         args.logdir.as_ref().map(|p| p.as_path()),
@@ -62,8 +62,8 @@ fn main() -> anyhow::Result<()> {
         // https://12factor.net/logs
         // NDJson is a best practice for logging:
         // http://ndjson.org/
-        println!("{}", json_message(&dicom_file, &dst)?);
+        println!("{}", json_message(&dicom_file, &outcome)?);
     }
 
-    anyhow::Ok(())
+    outcome.map(|_| ())
 }
