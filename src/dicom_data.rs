@@ -73,7 +73,9 @@ impl<'a> TagExtractor<'a> {
             .unwrap_or_else(|error| {
                 let e = DicomTagAndError { tag, error };
                 self.errors.borrow_mut().push(e);
-                "".into()
+
+                // https://github.com/FNNDSC/pypx/wiki/How-pypx-handles-missing-elements
+                "Not defined".into()
             })
     }
 
