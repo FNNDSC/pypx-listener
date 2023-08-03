@@ -6,6 +6,12 @@ use dicom::object::{DefaultDicomObject, Tag};
 use std::borrow::Cow;
 use std::cell::RefCell;
 
+/// Value used if the element for a DICOM tag is not found.
+///
+/// I'm not sure what to put here, see
+/// https://github.com/FNNDSC/pypx/wiki/How-pypx-handles-missing-elements
+pub const NOT_DEFINED: &str = "Not defined";
+
 /// DICOM tag data reader.
 ///
 /// Reading of DICOM tag data is fallible. If any errors occurs while trying to read data,
@@ -34,21 +40,21 @@ pub enum DicomTagError {
 
 /// DICOM elements which a [PypxPath] is comprised of.
 ///
-/// These DICOM elements _must_ be present and valid for `pypx`.
-/// If they cannot be read, then the program fails.
+/// Some elements are assumed to must exist, some are allowed to not be defined.
+/// I'm just really, really hoping that UID and ID numbers exist!
 #[allow(non_snake_case)]
 pub(crate) struct CommonElements<'a> {
     // these are all part of the path name.
     pub InstanceNumber: &'a str,
     pub SOPInstanceUID: &'a str,
     pub PatientID: &'a str,
-    pub PatientName: &'a str,
-    pub PatientBirthDate: &'a str,
-    pub StudyDescription: &'a str,
+    pub PatientName: Option<&'a str>,
+    pub PatientBirthDate: Option<&'a str>,
+    pub StudyDescription: Option<&'a str>,
     pub AccessionNumnber: &'a str,
-    pub StudyDate: &'a str,
+    pub StudyDate: Option<&'a str>,
     pub SeriesNumber: i32, // SeriesNumber is of the "Integer String" (IS) type
-    pub SeriesDescription: &'a str,
+    pub SeriesDescription: Option<&'a str>,
 
     // these are not part of the path name, but used in the log path names.
     pub StudyInstanceUID: String,
@@ -74,8 +80,7 @@ impl<'a> TagExtractor<'a> {
                 let e = DicomTagAndError { tag, error };
                 self.errors.borrow_mut().push(e);
 
-                // https://github.com/FNNDSC/pypx/wiki/How-pypx-handles-missing-elements
-                "Not defined".into()
+                NOT_DEFINED.into()
             })
     }
 
@@ -105,16 +110,16 @@ impl<'a> TryFrom<&'a DefaultDicomObject> for CommonElements<'a> {
             InstanceNumber: tt(dcm, tags::INSTANCE_NUMBER)?,
             SOPInstanceUID: tt(dcm, tags::SOP_INSTANCE_UID)?,
             PatientID: tt(dcm, tags::PATIENT_ID)?,
-            PatientName: tt(dcm, tags::PATIENT_NAME)?,
-            PatientBirthDate: tt(dcm, tags::PATIENT_BIRTH_DATE)?,
-            StudyDescription: tt(dcm, tags::STUDY_DESCRIPTION)?,
+            PatientName: tt(dcm, tags::PATIENT_NAME).ok(),
+            PatientBirthDate: tt(dcm, tags::PATIENT_BIRTH_DATE).ok(),
+            StudyDescription: tt(dcm, tags::STUDY_DESCRIPTION).ok(),
             AccessionNumnber: tt(dcm, tags::ACCESSION_NUMBER)?,
-            StudyDate: tt(dcm, tags::STUDY_DATE)?,
+            StudyDate: tt(dcm, tags::STUDY_DATE).ok(),
             SeriesNumber: dcm
                 .element(tags::SERIES_NUMBER)
                 .map_err(Self::Error::from)
                 .and_then(|ele| ele.value().to_int::<i32>().map_err(Self::Error::from))?,
-            SeriesDescription: tt(dcm, tags::SERIES_DESCRIPTION)?,
+            SeriesDescription: tt(dcm, tags::SERIES_DESCRIPTION).ok(),
             StudyInstanceUID: tts(dcm, tags::STUDY_INSTANCE_UID)?,
             SeriesInstanceUID: tts(dcm, tags::SERIES_INSTANCE_UID)?,
         };
@@ -122,7 +127,7 @@ impl<'a> TryFrom<&'a DefaultDicomObject> for CommonElements<'a> {
     }
 }
 
-/// Get the `&str` to a DICOM object.
+/// Get the trimmed `&str` to a DICOM object.
 ///
 /// I tried to make this helper function low-cost.
 fn tt(dcm: &DefaultDicomObject, tag: Tag) -> Result<&str, DicomTagError> {

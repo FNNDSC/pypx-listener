@@ -1,6 +1,6 @@
 //! Models of what gets written to `/home/dicom/log`.
 #![allow(non_snake_case)]
-use crate::dicom_data::{CommonElements, TagExtractor};
+use crate::dicom_data::{CommonElements, NOT_DEFINED, TagExtractor};
 use dicom::dictionary_std::tags;
 use hashbrown::{HashMap, HashSet};
 use serde::{Deserialize, Serialize};
@@ -26,7 +26,7 @@ impl<'a> PatientData<'a> {
             PatientName,
             PatientAge,
             PatientSex,
-            PatientBirthDate: Cow::Borrowed(e.PatientBirthDate),
+            PatientBirthDate: Cow::Borrowed(e.PatientBirthDate.unwrap_or(NOT_DEFINED)),
             StudyList: HashSet::new(),
         }
     }
@@ -45,8 +45,8 @@ impl<'a> StudyDataMeta<'a> {
     pub fn new(d: &'a TagExtractor, e: &'a CommonElements) -> Self {
         Self {
             PatientID: e.PatientID,
-            StudyDescription: e.StudyDescription,
-            StudyDate: e.StudyDate,
+            StudyDescription: e.StudyDescription.unwrap_or(NOT_DEFINED),
+            StudyDate: e.StudyDate.unwrap_or(NOT_DEFINED),
             StudyInstanceUID: &e.StudyInstanceUID,
             PerformedStationAETitle: d.get(tags::PERFORMED_STATION_AE_TITLE),
         }
@@ -70,9 +70,9 @@ impl<'a> SeriesDataMeta<'a> {
             PatientID: e.PatientID,
             StudyInstanceUID: &e.StudyInstanceUID,
             SeriesInstanceUID: &e.SeriesInstanceUID,
-            SeriesDescription: e.SeriesDescription,
+            SeriesDescription: e.SeriesDescription.unwrap_or(NOT_DEFINED),
             SeriesNumber: e.SeriesNumber,
-            SeriesDate: e.StudyDate,
+            SeriesDate: e.StudyDate.unwrap_or(NOT_DEFINED),
             Modality: d.get(tags::MODALITY),
         }
     }
