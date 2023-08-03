@@ -63,7 +63,8 @@ impl<'a> TagExtractor<'a> {
         }
     }
 
-    /// Get the value of a tag as a str.
+    /// Get the value of a tag as a str. In case of failure,
+    /// record the error in `self.errors` and return `""`.
     pub fn get(&self, tag: Tag) -> Cow<str> {
         self.dcm
             .element(tag)
@@ -73,6 +74,21 @@ impl<'a> TagExtractor<'a> {
                 let e = DicomTagAndError { tag, error };
                 self.errors.borrow_mut().push(e);
                 "".into()
+            })
+    }
+
+    /// Get the value of a tag as an integer. In the case of a failure,
+    /// record the error in `self.errors` and return [i32::MIN].
+    /// That oughta throw a wrench in the system!
+    pub fn get_i32(&self, tag: Tag) -> i32 {
+        self.dcm
+            .element(tag)
+            .map_err(DicomTagError::from)
+            .and_then(|ele| ele.to_int::<i32>().map_err(DicomTagError::from))
+            .unwrap_or_else(|error| {
+                let e = DicomTagAndError { tag, error };
+                self.errors.borrow_mut().push(e);
+                i32::MIN
             })
     }
 }

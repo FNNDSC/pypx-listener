@@ -84,7 +84,7 @@ pub(crate) struct InstanceData<'a> {
     StudyInstanceUID: &'a str,
     SeriesInstanceUID: &'a str,
     SeriesDescription: Cow<'a, str>,
-    SeriesNumber: u32,
+    SeriesNumber: i32,
     SeriesDate: Cow<'a, str>,
     Modality: Cow<'a, str>,
     outputFile: &'a str,
@@ -108,7 +108,7 @@ impl<'a> InstanceData<'a> {
             StudyInstanceUID: &e.StudyInstanceUID,
             SeriesInstanceUID: &e.SeriesInstanceUID,
             SeriesDescription: d.get(tags::SERIES_DESCRIPTION),
-            SeriesNumber: d.get(tags::SERIES_NUMBER).parse().unwrap(), // FIXME
+            SeriesNumber: d.get_i32(tags::SERIES_NUMBER),
             SeriesDate: d.get(tags::SERIES_DATE),
             Modality: d.get(tags::MODALITY),
             outputFile,
