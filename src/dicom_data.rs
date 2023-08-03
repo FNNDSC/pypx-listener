@@ -1,8 +1,8 @@
+//! Everything related to DICOM tag data extraction.
 use dicom::core::value::{CastValueError, ConvertValueError};
 use dicom::core::DataDictionary;
 use dicom::dictionary_std::{tags, StandardDataDictionary};
 use dicom::object::{DefaultDicomObject, Tag};
-use serde::Serialize;
 use std::borrow::Cow;
 use std::cell::RefCell;
 
@@ -15,6 +15,7 @@ pub(crate) struct TagExtractor<'a> {
     pub errors: RefCell<Vec<DicomTagAndError>>,
 }
 
+/// A DICOM tag and the error which occurred when trying to read its value.
 pub struct DicomTagAndError {
     pub tag: Tag,
     pub error: DicomTagError,
@@ -34,6 +35,7 @@ pub enum DicomTagError {
 /// DICOM elements which a [PypxPath] is comprised of.
 ///
 /// These DICOM elements _must_ be present and valid for `pypx`.
+/// If they cannot be read, then the program fails.
 #[allow(non_snake_case)]
 pub(crate) struct CommonElements<'a> {
     // these are all part of the path name.
@@ -61,6 +63,7 @@ impl<'a> TagExtractor<'a> {
         }
     }
 
+    /// Get the value of a tag as a str.
     pub fn get(&self, tag: Tag) -> Cow<str> {
         self.dcm
             .element(tag)
@@ -105,7 +108,6 @@ impl<'a> TryFrom<&'a DefaultDicomObject> for CommonElements<'a> {
 ///
 /// I tried to make this helper function low-cost.
 fn tt(dcm: &DefaultDicomObject, tag: Tag) -> Result<&str, DicomTagError> {
-    // TODO make this a method, and maybe we should call replace('\0', "")
     dcm.element(tag)
         .map_err(DicomTagError::from)
         .and_then(|e| e.string().map(|s| s.trim()).map_err(DicomTagError::from))
@@ -115,6 +117,7 @@ fn tts(dcm: &DefaultDicomObject, tag: Tag) -> Result<String, DicomTagError> {
     tt(dcm, tag).map(|s| s.replace('\0', ""))
 }
 
+/// Get the standard name of a tag.
 pub(crate) fn name_of(tag: Tag) -> Option<&'static str> {
     // WHY SAG-anon has a DICOM tag (0019,0010)?
     StandardDataDictionary.by_tag(tag).map(|e| e.alias)

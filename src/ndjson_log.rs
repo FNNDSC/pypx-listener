@@ -1,6 +1,6 @@
 use crate::dicom_data::{name_of, DicomTagAndError};
 use crate::repack::RepackOutcome;
-use camino::{Utf8Path, Utf8PathBuf};
+use camino::Utf8Path;
 use serde::Serialize;
 use std::os::unix::fs::MetadataExt;
 

@@ -46,39 +46,39 @@ pub(crate) fn write_logs(
         study_series_meta_dir.join(format!("{}-meta.json", &common.SeriesInstanceUID));
     if !study_series_meta_fname.is_file() {
         let study_series_meta =
-            StudyDataSeriesMeta::new(&common.SeriesInstanceUID, &unpack.dir.as_str(), dcm);
+            StudyDataSeriesMeta::new(&common.SeriesInstanceUID, unpack.dir.as_str(), dcm);
         let data: HashMap<_, _> = [(&common.StudyInstanceUID, study_series_meta)].into();
         write_json(data, study_series_meta_fname)?;
     }
-    //
-    // // write stuff to studyData/X.X.X.XXXXX-meta.json
-    // let study_meta_fname = study_data_dir.join(format!("{}-meta.json", &elements.StudyInstanceUID));
-    // if !study_meta_fname.is_file() {
-    //     let study_meta_data = StudyDataMeta::new(dcm, elements)?;
-    //     write_json(study_meta_data, study_meta_fname)?;
-    // }
-    //
-    // // write stuff to seriesData/Y.Y.Y.YYYYY-meta.json
-    // let series_meta_fname =
-    //     series_data_dir.join(format!("{}-meta.json", &elements.SeriesInstanceUID));
-    // if !series_meta_fname.is_file() {
-    //     let series_meta_data = SeriesDataMeta::new(dcm, elements)?;
-    //     write_json(series_meta_data, series_meta_fname)?;
-    // }
-    //
-    // // write stuff to seriesData/Y.Y.Y.YYYYY-pack.json
-    // let pack_fname = series_data_dir.join(format!("{}-pack.json", &elements.SeriesInstanceUID));
-    // if !pack_fname.is_file() {
-    //     write_json(SERIES_PACK, pack_fname)?;
-    // }
-    //
-    // // write stuff to seriesData/Y.Y.Y.YYYYY-img/Z.Z.Z.ZZZZZ.dcm.json
-    // let img_data_dir = series_data_dir.join(format!("{}-img", &elements.SeriesInstanceUID));
-    // fs_err::create_dir_all(&img_data_dir)?;
-    // let img_data_fname = img_data_dir.join(format!("{}.json", unpack.fname));
-    // let img_data = InstanceData::new(dcm, elements, &unpack.fname, unpack.path.to_string())?;
-    // let data: HashMap<_, _> = [(&elements.SeriesInstanceUID, img_data)].into();
-    // write_json(data, img_data_fname)?;
+
+    // write stuff to studyData/X.X.X.XXXXX-meta.json
+    let study_meta_fname = study_data_dir.join(format!("{}-meta.json", &common.StudyInstanceUID));
+    if !study_meta_fname.is_file() {
+        let study_meta_data = StudyDataMeta::new(&dcmtags, common);
+        write_json(study_meta_data, study_meta_fname)?;
+    }
+
+    // write stuff to seriesData/Y.Y.Y.YYYYY-meta.json
+    let series_meta_fname =
+        series_data_dir.join(format!("{}-meta.json", &common.SeriesInstanceUID));
+    if !series_meta_fname.is_file() {
+        let series_meta_data = SeriesDataMeta::new(&dcmtags, common);
+        write_json(series_meta_data, series_meta_fname)?;
+    }
+
+    // write stuff to seriesData/Y.Y.Y.YYYYY-img/Z.Z.Z.ZZZZZ.dcm.json
+    let img_data_dir = series_data_dir.join(format!("{}-img", &common.SeriesInstanceUID));
+    fs_err::create_dir_all(&img_data_dir)?;
+    let img_data_fname = img_data_dir.join(format!("{}.json", unpack.fname));
+    let img_data = InstanceData::new(&dcmtags, common, &unpack.fname, unpack.path.as_str());
+    let data: HashMap<_, _> = [(&common.SeriesInstanceUID, img_data)].into();
+    write_json(data, img_data_fname)?;
+
+    // write stuff to seriesData/Y.Y.Y.YYYYY-pack.json
+    let pack_fname = series_data_dir.join(format!("{}-pack.json", &common.SeriesInstanceUID));
+    if !pack_fname.is_file() {
+        write_json(SERIES_PACK, pack_fname)?;
+    }
 
     Ok(dcmtags.errors.into_inner())
 }

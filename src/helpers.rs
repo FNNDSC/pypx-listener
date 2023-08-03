@@ -1,17 +1,5 @@
-use dicom::core::value::{CastValueError, ValueType};
-use dicom::core::{DataDictionary, Tag};
-use dicom::object::{DefaultDicomObject, StandardDataDictionary};
 use regex::Regex;
 use std::sync::OnceLock;
-
-// fn empty2str(error: CastValueError) -> Result<&'static str, CastValueError> {
-//     if matches!(error.got, ValueType::Empty) {
-//         Ok("")
-//     } else {
-//         Err(error)
-//     }
-// }
-//
 
 /// Replace disallowed characters with "_".
 /// https://github.com/FNNDSC/pypx/blob/7619c15f4d2303d6d5ca7c255d81d06c7ab8682b/pypx/repack.py#L424
