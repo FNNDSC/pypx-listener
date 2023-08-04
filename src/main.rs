@@ -1,3 +1,4 @@
+use anyhow::Context;
 use camino::Utf8PathBuf;
 use clap::Parser;
 use rx_repack::{json_message, repack};
@@ -65,5 +66,7 @@ fn main() -> anyhow::Result<()> {
         println!("{}", json_message(&dicom_file, &outcome)?);
     }
 
-    outcome.map(|_| ())
+    outcome
+        .with_context(|| format!("Failed to pack: {}", &dicom_file))
+        .map(|_| ())
 }

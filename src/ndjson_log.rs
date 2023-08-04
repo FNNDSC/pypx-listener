@@ -8,9 +8,9 @@ use std::os::unix::fs::MetadataExt;
 pub fn json_message(
     src: &Utf8Path,
     result: &anyhow::Result<RepackOutcome>,
-) -> anyhow::Result<String> {
+) -> serde_json::Result<String> {
     let msg = Message::new(src, result);
-    serde_json::to_string(&msg).map_err(anyhow::Error::from)
+    serde_json::to_string(&msg)
 }
 
 #[allow(non_snake_case)]
