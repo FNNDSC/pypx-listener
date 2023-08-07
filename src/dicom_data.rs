@@ -51,7 +51,7 @@ pub(crate) struct CommonElements<'a> {
     pub PatientName: Option<&'a str>,
     pub PatientBirthDate: Option<&'a str>,
     pub StudyDescription: Option<&'a str>,
-    pub AccessionNumnber: &'a str,
+    pub AccessionNumnber: Option<&'a str>,
     pub StudyDate: Option<&'a str>,
     pub SeriesNumber: i32, // SeriesNumber is of the "Integer String" (IS) type
     pub SeriesDescription: Option<&'a str>,
@@ -113,7 +113,7 @@ impl<'a> TryFrom<&'a DefaultDicomObject> for CommonElements<'a> {
             PatientName: tt(dcm, tags::PATIENT_NAME).ok(),
             PatientBirthDate: tt(dcm, tags::PATIENT_BIRTH_DATE).ok(),
             StudyDescription: tt(dcm, tags::STUDY_DESCRIPTION).ok(),
-            AccessionNumnber: tt(dcm, tags::ACCESSION_NUMBER)?,
+            AccessionNumnber: tt(dcm, tags::ACCESSION_NUMBER).ok(),
             StudyDate: tt(dcm, tags::STUDY_DATE).ok(),
             SeriesNumber: dcm
                 .element(tags::SERIES_NUMBER)

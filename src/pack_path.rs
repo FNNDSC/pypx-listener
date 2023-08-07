@@ -26,7 +26,7 @@ impl PypxPath {
         let study_dir = sanitize(format!(
             "{}-{}-{}",
             dcm.StudyDescription.unwrap_or("StudyDescription"),
-            dcm.AccessionNumnber,
+            dcm.AccessionNumnber.unwrap_or("AccessionNumber"),
             dcm.StudyDate.unwrap_or("StudyDate")
         ));
         let series_dir = sanitize(format!(
