@@ -131,17 +131,15 @@ fn serialize_subdicom(dcm: &InMemDicomObject) -> impl Iterator<Item = String> + 
 
 fn serialize_subdicom_element(ele: &InMemElement) -> String {
     let tag = ele.tag();
+    let vr = ele.vr();
 
     // This doesn't perfectly match what px-repack would spit out, because px-repack would give a fully
     // human-readable name from the "Attribute Name" column of this table:
     // https://dicom.nema.org/medical/dicom/2020b/output/chtml/part03/sect_C.4.10.html
     // e.g. "Scheduled Procedure Step Descriptio"
-    let label = name_of(tag).unwrap_or("RX_REPACK_ERROR");
-
-    let vr = ele.vr();
-    let value = ele
-        .to_str()
-        .map(|c| c.to_string())
-        .unwrap_or("RX_REPACK_ERROR".to_string());
+    let (label, value) = match ValueAndLabel::try_from(ele) {
+        Ok(vl) => (vl.label, vl.value),
+        Err(e) => ("RX_REPACK_ERROR", Cow::Owned(e.to_string())),
+    };
     format!("{tag} {label} {vr}: {value}")
 }
