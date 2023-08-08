@@ -1,6 +1,6 @@
 //! Models of what gets written to `/home/dicom/log`.
 #![allow(non_snake_case)]
-use crate::dicom_data::{CommonElements, NOT_DEFINED, TagExtractor};
+use crate::dicom_data::{CommonElements, TagExtractor, NOT_DEFINED};
 use dicom::dictionary_std::tags;
 use hashbrown::{HashMap, HashSet};
 use serde::{Deserialize, Serialize};

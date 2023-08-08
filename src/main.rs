@@ -15,7 +15,7 @@ The path template is:
 
  %PatientID-%PatientName-%PatientBirthDate
  └──%StudyDescription-%AccessionNumber-%StudyDate
-    └──%_pad|5,0_SeriesNumber-%SeriesDescription
+    └──%_pad|5,0_SeriesNumber-%SeriesDescription-%_hash|%SeriesInstanceUID
        └──%_pad|4,0_InstanceNumber-%SOPInstanceUID.dcm
 "#
 )]

@@ -8,6 +8,36 @@
 An instance handler for `storescp` which reorganizes incoming DICOM files.
 Rust re-write of `px-repack` from [pypx](https://github.com/FNNDSC/pypx).
 
+## What It Does
+
+`pypx` is a collection of CLI commands and Python functions which handle
+PACS query and DICOM retrieval for the [ChRIS](https://chrisproject.org) system.
+The order of events for DICOM retrieval is:
+
+1. `pypx` requests for a DICOM series to be pushed from the PACS to us.
+2. `storescp` receives DICOM instances one by one.
+3. For each DICOM instance, "repack" it to a location on the filesystem where it'll be
+   picked up by downstream `pypx` operations.
+4. `pypx` discovers "repacked" files and pushes them to the _ChRIS backend_.
+
+### Repacking
+
+During the process or repacking:
+
+1. DICOM files are moved to the "data dir" in a human-friendly tree based layout.
+   E.g. `data/1449c1d-anonymized-20090701/MR-Brain_w_o_Contrast-98edede8b2-20130308/00005-SAG_MPRAGE_220_FOV/0061-1.3.12.2.1107.5.2.19.45152.2013030808110087109885915.dcm`
+2. JSON files containing DICOM tag data are written to the "log dir". These JSON
+   files are read by downstream `pypx` operations.
+
+### Successor to `px-repack`
+
+`rx-repack` versions 0.4.2 and earlier were drop-in replacements for `px-repack`
+and tested for feature parity. Starting in `rx-repack` version 1.0.0, features
+are being added to `rx-repack` which are not implemented in `px-repack`.
+
+The motivation to replace `px-repack` with `rx-repack` is performance.
+See the section about [performance](#blazingly-fast).
+
 ## Testing
 
 Get data:
@@ -25,7 +55,11 @@ cargo test
 ## _Blazingly Fast!_
 
 `rx-repack` runs faster than the rate at which `storescp` receives DICOM instances,
-so it is unlikely to have a resource deficit.
+so it is unlikely to cause _backpressure_.
+
+This solves a problem with `px-repack` where the memory footprint and elapsed time
+of spawning one Python process per file would cause a buildup of resource consumption
+even when pulling only 3-4 series of MRI data.
 
 ### Benchmarking: Setup
 

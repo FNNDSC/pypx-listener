@@ -22,7 +22,21 @@ fn test_parity_with_px_repack() -> anyhow::Result<()> {
     let actual_log_dir = tmp_path.join("log");
 
     process_all(&od_dir, &actual_data_dir, &actual_log_dir)?;
-    assert!(dirs_are_equal(&expected_data_dir, &actual_data_dir));
+
+    // modified in version 1.0.0, broken parity:
+    // rx-repack appends a hash value to the series directory, whereas px-repack does not.
+    let expected_series_dir = get_first_dicom_dir(&expected_data_dir);
+    let actual_series_dir = get_first_dicom_dir(&actual_data_dir);
+
+    assert_eq!(
+        &expected_series_dir,
+        &remove_trailing_hash_from(&actual_series_dir)
+    );
+
+    assert!(dirs_are_equal(
+        &expected_data_dir.join(expected_series_dir),
+        &actual_data_dir.join(actual_series_dir)
+    ));
 
     let expected_patient_data_dir = expected_log_dir.join("patientData");
     let actual_patient_data_dir = actual_log_dir.join("patientData");
@@ -40,7 +54,6 @@ fn test_parity_with_px_repack() -> anyhow::Result<()> {
                 .collect::<Vec<String>>()
         );
         assert_json_equal(&expected_file, &actual_file);
-        println!("OK");
     }
 
     // assert all files present, w/o checking their contents (for now)
@@ -86,6 +99,23 @@ fn dirs_are_equal(expected: &Utf8Path, actual: &Utf8Path) -> bool {
         .wait()
         .unwrap()
         .success()
+}
+
+/// Remove last 8 characters from the path's file name.
+fn remove_trailing_hash_from(path: &Utf8Path) -> Utf8PathBuf {
+    let file_name = path.file_name().unwrap();
+    path.with_file_name(&file_name[..file_name.len() - 8])
+}
+
+/// Get the parent directory of the first DICOM file found under `path` as a relative path.
+fn get_first_dicom_dir(path: &Utf8Path) -> Utf8PathBuf {
+    let abspath = glob::glob(path.join("**/*.dcm").as_str())
+        .unwrap()
+        .next()
+        .expect(&format!("*.dcm not found in {path}"))
+        .map(|p| Utf8PathBuf::from_path_buf(p).unwrap())
+        .unwrap();
+    pathdiff::diff_utf8_paths(abspath.parent().unwrap(), path).unwrap()
 }
 
 fn assert_json_equal(expected: &Utf8Path, actual: &Utf8Path) {

@@ -30,9 +30,10 @@ impl PypxPath {
             dcm.StudyDate.unwrap_or("StudyDate")
         ));
         let series_dir = sanitize(format!(
-            "{:0>5}-{}",
+            "{:0>5}-{}-{}",
             dcm.SeriesNumber,
-            dcm.SeriesDescription.unwrap_or("SeriesDescription")
+            dcm.SeriesDescription.unwrap_or("SeriesDescription"),
+            &hash(&dcm.SeriesInstanceUID)[..7]
         ));
 
         let pack_dir_rel = Utf8PathBuf::from(root_dir).join(study_dir).join(series_dir);
@@ -47,5 +48,26 @@ impl PypxPath {
             dir: pack_dir,
             path,
         }
+    }
+}
+
+/// Produces the hash of the data as a hexidecimal string.
+fn hash(data: &str) -> String {
+    format!("{:x}", seahash::hash(data.as_bytes()))
+}
+
+#[cfg(test)]
+mod test {
+
+    const EXPECTED: &str = "a27cf06";
+    const EXAMPLE_UID: &str = "1.3.12.2.1107.5.2.19.45152.2013030808061520200285270.0.0.0";
+    use super::*;
+
+    #[test]
+    fn test_seahash_stability() {
+        assert!(
+            hash(EXAMPLE_UID).starts_with(EXPECTED),
+            "Hash algorithm was changed from what was originally used by Jennings on 2023-08-06"
+        )
     }
 }
