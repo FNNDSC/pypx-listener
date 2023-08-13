@@ -26,12 +26,15 @@ impl PypxPath {
         let study_dir = sanitize(format!(
             "{}-{}-{}",
             dcm.StudyDescription.unwrap_or("StudyDescription"),
-            dcm.AccessionNumnber.unwrap_or("AccessionNumber"),
+            dcm.AccessionNumber.unwrap_or("AccessionNumber"),
             dcm.StudyDate.unwrap_or("StudyDate")
         ));
         let series_dir = sanitize(format!(
             "{:0>5}-{}-{}",
-            dcm.SeriesNumber,
+            dcm.SeriesNumber
+                .map(|s| s.to_string())
+                .as_deref()
+                .unwrap_or("SeriesNumber"),
             dcm.SeriesDescription.unwrap_or("SeriesDescription"),
             &hash(&dcm.SeriesInstanceUID)[..7]
         ));

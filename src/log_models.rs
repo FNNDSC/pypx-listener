@@ -1,6 +1,6 @@
 //! Models of what gets written to `/home/dicom/log`.
 #![allow(non_snake_case)]
-use crate::dicom_data::{CommonElements, TagExtractor, NOT_DEFINED};
+use crate::dicom_data::{CommonElements, MaybeU32, TagExtractor, NOT_DEFINED};
 use dicom::dictionary_std::tags;
 use hashbrown::{HashMap, HashSet};
 use serde::{Deserialize, Serialize};
@@ -59,7 +59,7 @@ pub(crate) struct SeriesDataMeta<'a> {
     StudyInstanceUID: &'a str,
     SeriesInstanceUID: &'a str,
     SeriesDescription: &'a str,
-    SeriesNumber: i32,
+    SeriesNumber: MaybeU32<'a>,
     SeriesDate: &'a str,
     Modality: Cow<'a, str>,
 }
@@ -71,7 +71,7 @@ impl<'a> SeriesDataMeta<'a> {
             StudyInstanceUID: &e.StudyInstanceUID,
             SeriesInstanceUID: &e.SeriesInstanceUID,
             SeriesDescription: e.SeriesDescription.unwrap_or(NOT_DEFINED),
-            SeriesNumber: e.SeriesNumber,
+            SeriesNumber: e.SeriesNumber.unwrap_or(MaybeU32::Str(NOT_DEFINED)),
             SeriesDate: e.StudyDate.unwrap_or(NOT_DEFINED),
             Modality: d.get(tags::MODALITY),
         }
@@ -84,7 +84,7 @@ pub(crate) struct InstanceData<'a> {
     StudyInstanceUID: &'a str,
     SeriesInstanceUID: &'a str,
     SeriesDescription: Cow<'a, str>,
-    SeriesNumber: i32,
+    SeriesNumber: MaybeU32<'a>,
     SeriesDate: Cow<'a, str>,
     Modality: Cow<'a, str>,
     outputFile: &'a str,
@@ -108,7 +108,7 @@ impl<'a> InstanceData<'a> {
             StudyInstanceUID: &e.StudyInstanceUID,
             SeriesInstanceUID: &e.SeriesInstanceUID,
             SeriesDescription: d.get(tags::SERIES_DESCRIPTION),
-            SeriesNumber: d.get_i32(tags::SERIES_NUMBER),
+            SeriesNumber: e.SeriesNumber.unwrap_or(MaybeU32::Str(NOT_DEFINED)),
             SeriesDate: d.get(tags::SERIES_DATE),
             Modality: d.get(tags::MODALITY),
             outputFile,

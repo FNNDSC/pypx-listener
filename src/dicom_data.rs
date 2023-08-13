@@ -51,14 +51,41 @@ pub(crate) struct CommonElements<'a> {
     pub PatientName: Option<&'a str>,
     pub PatientBirthDate: Option<&'a str>,
     pub StudyDescription: Option<&'a str>,
-    pub AccessionNumnber: Option<&'a str>,
+    pub AccessionNumber: Option<&'a str>,
     pub StudyDate: Option<&'a str>,
-    pub SeriesNumber: i32, // SeriesNumber is of the "Integer String" (IS) type
+
+    pub SeriesNumber: Option<MaybeU32<'a>>,
     pub SeriesDescription: Option<&'a str>,
 
     // these are not part of the path name, but used in the log path names.
     pub StudyInstanceUID: String,
     pub SeriesInstanceUID: String,
+}
+
+/// Something that is maybe a [u32], but in case it's not valid, is a [str].
+#[derive(Copy, Clone, Debug, PartialEq, serde::Serialize)]
+#[serde(untagged)]
+pub(crate) enum MaybeU32<'a> {
+    U32(u32),
+    Str(&'a str),
+}
+
+impl<'a> From<&'a str> for MaybeU32<'a> {
+    fn from(value: &'a str) -> Self {
+        value
+            .parse()
+            .map(Self::U32)
+            .unwrap_or_else(|_| MaybeU32::Str(value))
+    }
+}
+
+impl<'a> ToString for MaybeU32<'a> {
+    fn to_string(&self) -> String {
+        match self {
+            MaybeU32::U32(num) => num.to_string(),
+            MaybeU32::Str(s) => s.to_string(),
+        }
+    }
 }
 
 impl<'a> TagExtractor<'a> {
@@ -79,25 +106,24 @@ impl<'a> TagExtractor<'a> {
             .unwrap_or_else(|error| {
                 let e = DicomTagAndError { tag, error };
                 self.errors.borrow_mut().push(e);
-
                 NOT_DEFINED.into()
             })
     }
 
-    /// Get the value of a tag as an integer. In the case of a failure,
-    /// record the error in `self.errors` and return [i32::MIN].
-    /// That oughta throw a wrench in the system!
-    pub fn get_i32(&self, tag: Tag) -> i32 {
-        self.dcm
-            .element(tag)
-            .map_err(DicomTagError::from)
-            .and_then(|ele| ele.to_int::<i32>().map_err(DicomTagError::from))
-            .unwrap_or_else(|error| {
-                let e = DicomTagAndError { tag, error };
-                self.errors.borrow_mut().push(e);
-                i32::MIN
-            })
-    }
+    // /// Get the value of a tag as an integer. In the case of a failure,
+    // /// record the error in `self.errors` and return [i32::MIN].
+    // /// That oughta throw a wrench in the system!
+    // pub fn get_i32(&self, tag: Tag) -> i32 {
+    //     self.dcm
+    //         .element(tag)
+    //         .map_err(DicomTagError::from)
+    //         .and_then(|ele| ele.to_int::<i32>().map_err(DicomTagError::from))
+    //         .unwrap_or_else(|error| {
+    //             let e = DicomTagAndError { tag, error };
+    //             self.errors.borrow_mut().push(e);
+    //             i32::MIN
+    //         })
+    // }
 }
 
 impl<'a> TryFrom<&'a DefaultDicomObject> for CommonElements<'a> {
@@ -113,12 +139,9 @@ impl<'a> TryFrom<&'a DefaultDicomObject> for CommonElements<'a> {
             PatientName: tt(dcm, tags::PATIENT_NAME).ok(),
             PatientBirthDate: tt(dcm, tags::PATIENT_BIRTH_DATE).ok(),
             StudyDescription: tt(dcm, tags::STUDY_DESCRIPTION).ok(),
-            AccessionNumnber: tt(dcm, tags::ACCESSION_NUMBER).ok(),
+            AccessionNumber: tt(dcm, tags::ACCESSION_NUMBER).ok(),
             StudyDate: tt(dcm, tags::STUDY_DATE).ok(),
-            SeriesNumber: dcm
-                .element(tags::SERIES_NUMBER)
-                .map_err(Self::Error::from)
-                .and_then(|ele| ele.value().to_int::<i32>().map_err(Self::Error::from))?,
+            SeriesNumber: tt(dcm, tags::SERIES_NUMBER).map(MaybeU32::from).ok(),
             SeriesDescription: tt(dcm, tags::SERIES_DESCRIPTION).ok(),
             StudyInstanceUID: tts(dcm, tags::STUDY_INSTANCE_UID)?,
             SeriesInstanceUID: tts(dcm, tags::SERIES_INSTANCE_UID)?,
