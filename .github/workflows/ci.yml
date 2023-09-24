@@ -136,4 +136,4 @@ jobs:
       with:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_PASSWORD }}
-        short-description: A DICOM instance handler for storescp which reorganizes incoming DICOM files for the pypx+pfdcm+ChRIS ecosystem.
+        short-description: A storescp DICOM instance handler for the pypx+pfdcm+ChRIS ecosystem.
