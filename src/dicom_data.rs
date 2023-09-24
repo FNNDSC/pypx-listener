@@ -45,7 +45,7 @@ pub enum DicomTagError {
 #[allow(non_snake_case)]
 pub(crate) struct CommonElements<'a> {
     // these are all part of the path name.
-    pub InstanceNumber: &'a str,
+    pub InstanceNumber: Option<&'a str>,
     pub SOPInstanceUID: &'a str,
     pub PatientID: &'a str,
     pub PatientName: Option<&'a str>,
@@ -133,7 +133,7 @@ impl<'a> TryFrom<&'a DefaultDicomObject> for CommonElements<'a> {
         // - dcm.element(...)?.string() produces a reference to the data w/o cloning nor parsing
         // - dcm.element is more efficient than dcm.element_by_name, since the latter does a map lookup
         let data = Self {
-            InstanceNumber: tt(dcm, tags::INSTANCE_NUMBER)?,
+            InstanceNumber: tt(dcm, tags::INSTANCE_NUMBER).ok(),
             SOPInstanceUID: tt(dcm, tags::SOP_INSTANCE_UID)?,
             PatientID: tt(dcm, tags::PATIENT_ID)?,
             PatientName: tt(dcm, tags::PATIENT_NAME).ok(),

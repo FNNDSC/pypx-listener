@@ -42,7 +42,7 @@ impl PypxPath {
         let pack_dir_rel = Utf8PathBuf::from(root_dir).join(study_dir).join(series_dir);
         let fname = sanitize(format!(
             "{:0>4}-{}.dcm",
-            dcm.InstanceNumber, dcm.SOPInstanceUID
+            dcm.InstanceNumber.unwrap_or("InstanceNumber"), dcm.SOPInstanceUID
         ));
         let pack_dir = data_dir.join(pack_dir_rel);
         let path = pack_dir.join(&fname);
