@@ -55,7 +55,8 @@ pub(crate) fn write_logs(
     let study_meta_fname = study_data_dir.join(format!("{}-meta.json", &common.StudyInstanceUID));
     if !study_meta_fname.is_file() {
         let study_meta_data = StudyDataMeta::new(&dcmtags, common);
-        write_json(study_meta_data, study_meta_fname)?;
+        let data: HashMap<_, _> = [(&common.StudyInstanceUID, study_meta_data)].into();
+        write_json(data, study_meta_fname)?;
     }
 
     // write stuff to seriesData/Y.Y.Y.YYYYY-meta.json
